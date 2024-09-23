@@ -1,13 +1,14 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View } from 'react-native';
-import AudioRecorder from './components/AudioRecord/AudioRecorder';
+import { Link } from 'expo-router';
 
-export default function App() {
+export default function Home() {
   return (
     <View style={styles.container}>
-      <Text>Iniciar</Text>
+      <Text>Iniciar Gravação</Text>
       <Text>Começar gravando uma reunião ou importar audio existente.</Text>
-      <AudioRecorder />
+      <Link href={"/recorder"}>Pagina de gravação</Link>
+      <Link href={"/summary"}>Minhas reuniões</Link>
       <StatusBar style="auto" />
     </View>
   );
