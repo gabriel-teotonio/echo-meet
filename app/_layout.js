@@ -1,19 +1,29 @@
-import { Stack } from "expo-router"
+import * as SplashScreen from "expo-splash-screen";
+import { useEffect } from "react";
+import { SessionProvider } from "./ctx";
+
+export { 
+  // Catch any errors thrown by the Layout component.
+  ErrorBoundary,
+} from "expo-router";
+
+export const unstable_settings = {
+  // Ensure that reloading on `/modal` keeps a back button present.
+  initialRouteName: "login",
+};
+
+// Prevent the splash screen from auto-hiding before asset loading is complete.
+SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-    return (
-        <Stack
-        screenOptions={{
-            headerStyle: {
-                backgroundColor: '#3A21B8'
-            },
-            headerTintColor: '#fff'
-        }}
-        >
-            <Stack.Screen name="index" options={{title: "Home"}}/>
-            <Stack.Screen name="recorder" options={{title: "Gravação"}}/>
-            <Stack.Screen name="summary/index" options={{title: "Reuniões"}}/>
-            <Stack.Screen name="(tabs)" options={{title: "Reuniões"}}/>
-        </Stack>
-    );
+  return <RootLayoutNav />;
+}
+import { Slot } from "expo-router";
+
+function RootLayoutNav() {
+  return (
+    <SessionProvider>
+      <Slot />
+    </SessionProvider>
+  );
 }
