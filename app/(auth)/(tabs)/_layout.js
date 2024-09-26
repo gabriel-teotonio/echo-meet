@@ -35,10 +35,24 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="two"
+        name="home/index"
         options={{
-          title: "Tab Two",
-          tabBarIcon: ({ color }) => <FontAwesome name="code" color={color} />,
+          title: "Home",
+          tabBarIcon: ({ color }) => <FontAwesome name="home" color={color} size={24}/>,
+        }}
+      />
+      <Tabs.Screen
+        name="summary/index"
+        options={{
+          title: "Reuniões",
+          tabBarIcon: ({ color }) => <FontAwesome name="wechat" color={color} size={24}/>,
+        }}
+        />
+        <Tabs.Screen
+        name="groups/index"
+        options={{
+          title: "Grupos",
+          tabBarIcon: ({ color }) => <FontAwesome name="group" color={color} size={24}/>,
         }}
       />
     </Tabs>

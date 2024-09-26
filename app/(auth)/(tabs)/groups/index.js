@@ -1,11 +1,12 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { Link } from 'expo-router';
 
-export default function Summary() {
+export default function GroupsScreen() {
   return (
     <View style={styles.container}>
-      <Text>Minhas reuniões</Text>
+      <Text>Grupos</Text>
       <Link href={"/recorder"}>Pagina de gravação</Link>
+      <Link href={"/summary"}>Minhas reuniões</Link>
     </View>
   );
 }
