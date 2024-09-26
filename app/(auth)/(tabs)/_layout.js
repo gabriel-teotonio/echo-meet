@@ -11,33 +11,29 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: true,
+        headerStyle: {
+          
+        },
+        headerRight: () => (
+          <Link href="/modal" asChild>
+            <Pressable>
+              {({ pressed }) => (
+                <FontAwesome
+                  name="info-circle"
+                  size={25}
+                  color={'blue'}
+                  style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }}
+                />
+              )}
+            </Pressable>
+          </Link>
+        )
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: "Tab One",
-          tabBarIcon: ({ color }) => <FontAwesome name="code" color={color} />,
-          headerRight: () => (
-            <Link href="/modal" asChild>
-              <Pressable>
-                {({ pressed }) => (
-                  <FontAwesome
-                    name="info-circle"
-                    size={25}
-                    color={'blue'}
-                    style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }}
-                  />
-                )}
-              </Pressable>
-            </Link>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="home/index"
-        options={{
-          title: "Home",
+          title: "Início",
           tabBarIcon: ({ color }) => <FontAwesome name="home" color={color} size={24}/>,
         }}
       />
@@ -53,6 +49,13 @@ export default function TabLayout() {
         options={{
           title: "Grupos",
           tabBarIcon: ({ color }) => <FontAwesome name="group" color={color} size={24}/>,
+        }}
+      />
+       <Tabs.Screen
+        name="files/index"
+        options={{
+          title: "Arquivos de áudio",
+          tabBarIcon: ({ color }) => <FontAwesome name="file" color={color} size={24}/>,
         }}
       />
     </Tabs>

@@ -7,7 +7,7 @@ export default function TabOneScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Tab One</Text>
-      <Text>Welcome, {session}</Text>
+      <Text style={styles.text}>Welcome, {session}</Text>
       <View
         style={styles.separator}
         lightColor="#eee"
@@ -30,10 +30,17 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: '#0B0915',
+    tintColor: '#fff'
   },
   title: {
     fontSize: 20,
     fontWeight: "bold",
+    color: '#fff'
+  },
+  text: {
+    fontSize: 16,
+    color: '#fff'
   },
   separator: {
     marginVertical: 30,
