@@ -1,34 +1,39 @@
-import { Button, StyleSheet, Text, TextInput, View } from "react-native";
+import { Button, StyleSheet, Text, TextInput, View, TouchableOpacity } from "react-native";
 import { useSession } from "./ctx";
 import { router } from "expo-router";
 
 export default function Login() {
   const { signIn } = useSession();
   const handleLogin = () => {
-    //Adicione sua lógica de login aqui
+    // Adicione sua lógica de login aqui
     signIn();
-    //Antes de navegar, tenha certeza de que o usuário está autenticado
+    // Antes de navegar, tenha certeza de que o usuário está autenticado
     router.replace("/");
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Bem-vindo novamente! </Text>
-      <Text style={styles.paragraph}>
-       faça seu Login
-      </Text>
-      <View
-        style={styles.separator}
-        lightColor="#eee"
-        darkColor="rgba(255,255,255,0.1)"
-      />
-      <TextInput placeholder="Usuário ou Email" style={styles.input} />
+      <Text style={styles.title}>Echo Meet</Text>
+
+      <TextInput placeholder="Digite seu e-mail" placeholderTextColor="#666" style={styles.input} />
       <TextInput
-        placeholder="Senha"
+        placeholder="Digite sua senha"
         secureTextEntry
+        placeholderTextColor="#666"
         style={styles.input}
       />
-      <Button title="Entrar" onPress={handleLogin} />
+
+      <TouchableOpacity style={styles.forgotPassword}>
+        <Text style={styles.forgotText}>Esqueceu a senha?</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.button} onPress={handleLogin}>
+        <Text style={styles.buttonText}>Login</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity onPress={() => router.push("/register")}>
+        <Text style={styles.registerText}>Registre-se</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -36,29 +41,48 @@ export default function Login() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#fff", // Fundo branco
     alignItems: "center",
     justifyContent: "center",
+    paddingHorizontal: 20,
   },
   title: {
-    fontSize: 20,
-    fontWeight: "bold",
-  },
-  paragraph: {
-    margin: 24,
-    fontSize: 18,
-    textAlign: "center",
-  },
-
-  separator: {
-    height: 1,
-    width: "80%",
+    fontSize: 30,
+    color: "#000", // Título preto
+    marginBottom: 50,
   },
   input: {
-    width: "80%",
-    borderWidth: 1,
-    borderColor: "#000",
-    padding: 10,
-    margin: 10,
-    borderRadius: 4,
+    width: "100%",
+    borderBottomWidth: 1,
+    borderBottomColor: "#999",
+    color: "#000", // Texto dos inputs preto
+    fontSize: 16,
+    paddingVertical: 10,
+    marginBottom: 30,
+  },
+  button: {
+    width: "100%",
+    backgroundColor: "#5E17EB", // Botão roxo
+    padding: 15,
+    borderRadius: 8,
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  buttonText: {
+    color: "#fff", // Texto do botão branco
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  forgotPassword: {
+    alignSelf: "flex-end",
+    marginBottom: 30,
+  },
+  forgotText: {
+    color: "#000", // Texto de "Esqueceu a senha?" preto
+    fontSize: 14,
+  },
+  registerText: {
+    color: "#5E17EB", // Texto do link de registro roxo
+    fontSize: 16,
   },
 });

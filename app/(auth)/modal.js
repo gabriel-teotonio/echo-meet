@@ -13,7 +13,7 @@ export default function AppLayout() {
   if (!session) {
     return <Redirect href="/login" />;
   }
-
+ 
   return (
     <Stack>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

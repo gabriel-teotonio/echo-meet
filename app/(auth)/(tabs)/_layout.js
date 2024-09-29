@@ -14,20 +14,6 @@ export default function TabLayout() {
         headerStyle: {
           
         },
-        headerRight: () => (
-          <Link href="/modal" asChild>
-            <Pressable>
-              {({ pressed }) => (
-                <FontAwesome
-                  name="info-circle"
-                  size={25}
-                  color={'blue'}
-                  style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }}
-                />
-              )}
-            </Pressable>
-          </Link>
-        )
       }}
     >
       <Tabs.Screen
