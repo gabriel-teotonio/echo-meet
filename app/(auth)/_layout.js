@@ -39,6 +39,10 @@ export default function AppLayout() {
           headerShown: true,
         headerTitle:() => (<Image style={{width: 120}} resizeMode='contain' source={LogoEchoMeet}/>)
         }} />
+      <Stack.Screen name="groups/[id]" options={{
+        headerTitle: 'Grupo do Financeiro'
+      }}/>
+      <Stack.Screen name="recorder" />
       <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
     </Stack>
   )
