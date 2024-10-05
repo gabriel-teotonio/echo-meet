@@ -1,15 +1,17 @@
+// Importações necessárias
 import React, { useEffect, useState } from "react";
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { FontAwesome } from "@expo/vector-icons";
 import { Audio } from "expo-av";
 import { useRouter } from "expo-router";
-import recordingEvents from '../../../events/recordEvents';
+import recordingEvents from '../../../events/recordEvents'; // Importa os eventos de gravação
 
 export default function FilesScreen() {
   const [recordings, setRecordings] = useState([]);
-  const [sound, setSound] = useState(null);
-  const router = useRouter()
+  const [playingSound, setPlayingSound] = useState(null);
+  const [playingUri, setPlayingUri] = useState(null);
+  const router = useRouter();
 
   // Função para buscar as gravações do AsyncStorage
   const fetchRecordings = async () => {
@@ -26,45 +28,77 @@ export default function FilesScreen() {
 
   // Função para tocar o áudio
   const playAudio = async (uri) => {
-    if (sound) {
-      await sound.unloadAsync(); // Descarregar o som anterior se já estiver tocando
+    if (playingUri === uri) {
+      await stopAudio();
+    } else {
+      const { sound } = await Audio.Sound.createAsync({ uri });
+      setPlayingUri(uri);
+      setPlayingSound(sound);
+
+      await sound.playAsync();
+
+      sound.setOnPlaybackStatusUpdate(async (status) => {
+        if (status.didJustFinish) {
+          setPlayingUri(null);
+          setPlayingSound(null);
+        }
+      });
     }
-    const { sound: newSound } = await Audio.Sound.createAsync({ uri });
-    setSound(newSound);
-    await newSound.playAsync();
   };
 
   // Função para parar o áudio
   const stopAudio = async () => {
-    if (sound) {
-      await sound.stopAsync();
-      setSound(null);
+    if (playingSound) {
+      await playingSound.stopAsync();
+      setPlayingUri(null);
+      setPlayingSound(null);
     }
   };
 
-  // Busca as gravações ao carregar a tela
+  // Função para deletar uma gravação
+  const deleteRecording = async (uri) => {
+    try {
+      const updatedRecordings = recordings.filter(recording => recording.uri !== uri);
+      setRecordings(updatedRecordings);
+      await AsyncStorage.setItem("recordings", JSON.stringify(updatedRecordings));
+      Alert.alert("Sucesso", "Gravação removida com sucesso.");
+    } catch (error) {
+      console.error("Erro ao deletar gravação:", error);
+      Alert.alert("Erro", "Falha ao remover gravação.");
+    }
+  };
+
+  // UseEffect para buscar gravações e escutar eventos
   useEffect(() => {
     fetchRecordings();
+    
+    // Listener para novas gravações
+    const onNewRecordingAdded = () => {
+      fetchRecordings(); // Atualiza a lista de gravações
+    };
 
-    // identifica quando novo audio foi salvo
-    recordingEvents.on('newRecordingAdded', fetchRecordings);
+    recordingEvents.on('newRecordingAdded', onNewRecordingAdded);
+
+    // Limpeza do listener
     return () => {
-      recordingEvents.removeListener('newRecordingAdded', fetchRecordings);
+      recordingEvents.removeListener('newRecordingAdded', onNewRecordingAdded);
     };
   }, []);
 
-  // Renderiza cada gravação
   const renderRecording = ({ item }) => (
     <View style={styles.recordingItem}>
       <Text style={styles.recordingText}>
         {item.date} - {item.duration}
       </Text>
       <View style={styles.buttonsContainer}>
-        <TouchableOpacity style={styles.playButton} onPress={() => playAudio(item.uri)}>
-          <FontAwesome name="play" size={24} color="white" />
+        <TouchableOpacity 
+          style={styles.playButton} 
+          onPress={() => playAudio(item.uri)}
+        >
+          <FontAwesome name={playingUri === item.uri ? "pause" : "play"} size={20} color="white" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.stopButton} onPress={stopAudio}>
-          <FontAwesome name="stop" size={24} color="white" />
+        <TouchableOpacity style={styles.deleteButton} onPress={() => deleteRecording(item.uri)}>
+          <FontAwesome name="trash" size={20} color="white" />
         </TouchableOpacity>
       </View>
     </View>
@@ -72,7 +106,6 @@ export default function FilesScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Arquivos Gravados</Text>
       {recordings.length === 0 ? (
         <Text style={styles.noRecordingsText}>Nenhum áudio gravado encontrado.</Text>
       ) : (
@@ -82,10 +115,7 @@ export default function FilesScreen() {
           keyExtractor={(item, index) => index.toString()}
         />
       )}
-      {/* botão flutuante */}
-      <TouchableOpacity style={styles.floatingButton} 
-      onPress={() => (router.push('recorder'))}
-      >
+      <TouchableOpacity style={styles.floatingButton} onPress={() => router.push('recorder')}>
         <FontAwesome name="plus" size={24} color="white" />
       </TouchableOpacity>
     </View>
@@ -96,56 +126,61 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 20,
+    backgroundColor: "#F7F7F7",
   },
   noRecordingsText: {
-    fontSize: 16,
+    fontSize: 18,
     color: "gray",
+    textAlign: "center",
+    marginTop: 30,
   },
   recordingItem: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "#f0f0f0",
-    padding: 10,
-    marginBottom: 10,
-    borderRadius: 8,
+    backgroundColor: "#FFFFFF",
+    padding: 15,
+    marginBottom: 15,
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   recordingText: {
-    fontSize: 16,
+    fontSize: 18,
+    color: "#555",
+    flex: 1,
   },
   buttonsContainer: {
     flexDirection: "row",
   },
   playButton: {
     marginRight: 10,
-    backgroundColor: "#32CD32",
-    padding: 10,
-    borderRadius: 5,
+    backgroundColor: "#5E17EB",
+    padding: 8,
+    borderRadius: 8,
   },
-  stopButton: {
-    backgroundColor: "#FF6347",
-    padding: 10,
-    borderRadius: 5,
+  deleteButton: {
+    backgroundColor: "#FF4C4C",
+    padding: 8,
+    borderRadius: 8,
   },
   floatingButton: {
     position: "absolute",
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: "#2196F3",
+    backgroundColor: "#5E17EB",
     justifyContent: "center",
     alignItems: "center",
-    bottom: 20, // Distância do fundo da tela
-    right: 20,  // Distância do lado direito da tela
-    elevation: 8, // Para adicionar uma sombra no Android
-    shadowColor: "#000", // Sombra no iOS
+    bottom: 30,
+    right: 30,
+    elevation: 10,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
   },
 });

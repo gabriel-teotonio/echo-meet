@@ -1,10 +1,10 @@
+// app/(auth)/recorder.js
 import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { Audio } from "expo-av";
 import { FontAwesome } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import recordingEvents from '../events/recordEvents'
-
+import { Svg, Polyline } from "react-native-svg"; // Importando Polyline para o visualizador
 
 export default function AudioRecordingScreen() {
   const [recording, setRecording] = useState(null);
@@ -12,7 +12,8 @@ export default function AudioRecordingScreen() {
   const [recordingStatus, setRecordingStatus] = useState("Clique para gravar");
   const [recordedUri, setRecordedUri] = useState(null);
   const [isPaused, setIsPaused] = useState(false);
-  const [recordingTime, setRecordingTime] = useState(0); // Estado para o tempo de gravação
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [audioLevels, setAudioLevels] = useState([]); // Para armazenar os níveis de áudio
 
   // Função para iniciar a gravação
   async function startRecording() {
@@ -30,7 +31,9 @@ export default function AudioRecordingScreen() {
         setRecording(recording);
         setRecordingStatus("Gravando...");
         setIsPaused(false);
-        setRecordingTime(0); // Reinicia o tempo
+        setRecordingTime(0);
+        setAudioLevels([]); // Limpa os níveis de áudio quando começa a gravar
+        startAudioMetering(); // Iniciar medição de áudio
       } else {
         alert("Permissão de gravação negada.");
       }
@@ -38,6 +41,23 @@ export default function AudioRecordingScreen() {
       console.error("Erro ao iniciar a gravação:", error);
     }
   }
+
+  // Inicia a medição do nível de áudio
+  const startAudioMetering = async () => {
+    if (recording) {
+      const interval = setInterval(async () => {
+        const { meters } = await recording.getMeteringInfoAsync();
+        setAudioLevels((prevLevels) => {
+          // Mantém apenas os últimos 50 níveis de áudio para visualização
+          const newLevels = [...prevLevels, meters.rms];
+          return newLevels.slice(-50);
+        });
+      }, 100);
+      
+      // Armazenando o ID do intervalo para permitir a limpeza
+      return () => clearInterval(interval); // Limpar intervalo quando a gravação parar
+    }
+  };
 
   // Função para pausar a gravação
   async function pauseRecording() {
@@ -104,7 +124,6 @@ export default function AudioRecordingScreen() {
 
         updatedRecordings.push(newRecording);
         await AsyncStorage.setItem("recordings", JSON.stringify(updatedRecordings));
-        recordingEvents.emit('newRecordingAdded');
         Alert.alert("Sucesso", "Gravação salva com sucesso!");
       } catch (error) {
         console.error("Erro ao salvar a gravação:", error);
@@ -134,6 +153,13 @@ export default function AudioRecordingScreen() {
     return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
   };
 
+  // Normaliza os níveis de áudio para a visualização
+  const normalizeAudioLevels = () => {
+    if (audioLevels.length === 0) return [];
+    const maxLevel = Math.max(...audioLevels);
+    return audioLevels.map(level => (level / maxLevel) * 100); // Normaliza entre 0 e 100
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Gravação de Áudio</Text>
@@ -141,9 +167,21 @@ export default function AudioRecordingScreen() {
       {/* Exibe o tempo de gravação */}
       {recording && <Text style={styles.timerText}>{formatTime(recordingTime)}</Text>}
 
+      {/* Visualizador de Áudio */}
+      <View style={styles.visualizerContainer}>
+        <Svg height="100" width="300">
+          <Polyline
+            points={normalizeAudioLevels().map((level, index) => `${index * 6},${100 - level}`).join(" ")} // Converte os níveis de áudio para pontos
+            stroke="#5E17EB" // Cor do traço
+            strokeWidth="2"
+            fill="none"
+          />
+        </Svg>
+      </View>
+
       {/* Botões para iniciar, pausar e parar a gravação */}
       {!recording && (
-        <TouchableOpacity style={styles.recordButton} onPress={startRecording}>
+        <TouchableOpacity style={[styles.recordButton, styles.startButton]} onPress={startRecording}>
           <FontAwesome name="microphone" size={32} color="white" />
         </TouchableOpacity>
       )}
@@ -151,15 +189,15 @@ export default function AudioRecordingScreen() {
       {recording && (
         <View style={styles.controlsContainer}>
           {isPaused ? (
-            <TouchableOpacity style={styles.controlButton} onPress={resumeRecording}>
+            <TouchableOpacity style={[styles.controlButton, styles.resumeButton]} onPress={resumeRecording}>
               <FontAwesome name="play" size={24} color="white" />
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity style={styles.controlButton} onPress={pauseRecording}>
+            <TouchableOpacity style={[styles.controlButton, styles.pauseButton]} onPress={pauseRecording}>
               <FontAwesome name="pause" size={24} color="white" />
             </TouchableOpacity>
           )}
-          <TouchableOpacity style={styles.controlButton} onPress={stopRecording}>
+          <TouchableOpacity style={[styles.controlButton, styles.stopButton]} onPress={stopRecording}>
             <FontAwesome name="stop" size={24} color="white" />
           </TouchableOpacity>
         </View>
@@ -171,12 +209,8 @@ export default function AudioRecordingScreen() {
       {recordedUri && (
         <View style={styles.playbackContainer}>
           <TouchableOpacity style={styles.playButton} onPress={playAudio}>
-            <FontAwesome name="play-circle" size={24} color="white" />
+            <FontAwesome name="play" size={24} color="white" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.playButton} onPress={stopAudio}>
-            <FontAwesome name="stop-circle" size={24} color="white" />
-          </TouchableOpacity>
-          {/* Botão para salvar o áudio */}
           <TouchableOpacity style={styles.saveButton} onPress={saveRecording}>
             <FontAwesome name="save" size={24} color="white" />
           </TouchableOpacity>
@@ -185,75 +219,98 @@ export default function AudioRecordingScreen() {
     </View>
   );
 }
+
+// Estilos
 const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      justifyContent: "center",
-      alignItems: "center",
-      backgroundColor: "#f8f8f8",
-      padding: 16,
-    },
-    title: {
-      fontSize: 24,
-      fontWeight: "bold",
-      marginBottom: 20,
-    },
-    timerText: {
-      fontSize: 20,
-      marginBottom: 10,
-    },
-    recordButton: {
-      width: 80,
-      height: 80,
-      borderRadius: 40,
-      backgroundColor: "#3A21B8",
-      justifyContent: "center",
-      alignItems: "center",
-      marginBottom: 20,
-    },
-    controlsContainer: {
-      flexDirection: "row",
-      justifyContent: "space-around",
-      alignItems: "center",
-      width: 200,
-    },
-    controlButton: {
-      width: 50,
-      height: 50,
-      borderRadius: 25,
-      backgroundColor: "#FFA500",
-      justifyContent: "center",
-      alignItems: "center",
-      margin: 10,
-    },
-    statusText: {
-      fontSize: 16,
-      color: "#333",
-      marginTop: 10,
-    },
-    playbackContainer: {
-      flexDirection: "row",
-      justifyContent: "space-around",
-      alignItems: "center",
-      width: 150,
-      marginTop: 20,
-    },
-    playButton: {
-      width: 50,
-      height: 50,
-      borderRadius: 25,
-      backgroundColor: "#2196F3",
-      justifyContent: "center",
-      alignItems: "center",
-      margin: 10,
-    },
-    saveButton: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
-        backgroundColor: "#32CD32",
-        justifyContent: "center",
-        alignItems: "center",
-        margin: 10,
-      },
-  });
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f0f0f0",
+    padding: 16,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: "bold",
+    marginBottom: 20,
+    color: "#333",
+  },
+  timerText: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#FF4C4C", // Cor do tempo de gravação
+    marginBottom: 10,
+  },
+  visualizerContainer: {
+    marginBottom: 20,
+    alignItems: "center",
+  },
+  recordButton: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 20,
+    elevation: 5, // Sombra para botão de gravação
+  },
+  controlsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    width: 220,
+  },
+  controlButton: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: "center",
+    alignItems: "center",
+    margin: 10,
+    elevation: 3, // Sombra para os botões de controle
+  },
+  startButton: {
+    backgroundColor: "#5E17EB", // Cor para iniciar gravação
+  },
+  pauseButton: {
+    backgroundColor: "#FF4C4C", // Cor para pausar
+  },
+  resumeButton: {
+    backgroundColor: "#5E17EB", // Cor para continuar
+  },
+  stopButton: {
+    backgroundColor: "#FF4C4C", // Cor para parar
+  },
+  statusText: {
+    fontSize: 16,
+    color: "#333",
+    marginTop: 10,
+  },
+  playbackContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    width: 180,
+    marginTop: 20,
+  },
+  playButton: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: "#5E17EB", // Cor para reproduzir
+    justifyContent: "center",
+    alignItems: "center",
+    margin: 10,
+    elevation: 3, // Sombra para o botão de play
+  },
+  saveButton: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: "#FF4C4C", // Cor para salvar
+    justifyContent: "center",
+    alignItems: "center",
+    margin: 10,
+    elevation: 3, // Sombra para o botão de salvar
+  },
+});

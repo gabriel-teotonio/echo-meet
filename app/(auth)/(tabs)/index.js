@@ -1,23 +1,19 @@
-import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Image } from "react-native";
+import { ScrollView, StyleSheet, Text, View, TouchableOpacity } from "react-native";
 import { useSession } from "../../ctx";
-import { useState } from "react";
+import { Link } from "expo-router"; // Importando Link
 import { Ionicons } from "@expo/vector-icons"; // Importando ícones
 
 export default function TabOneScreen() {
   const { signOut, session } = useSession();
-  const [isDarkMode, setIsDarkMode] = useState(false); // Estado para gerenciar o tema
-
-  const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode); // Alterna o tema
-  };
 
   return (
-    <View style={[styles.container, isDarkMode && styles.darkContainer]}>
-      {/* <Text style={[styles.title, isDarkMode && styles.darkTitle]}>Echo Meet</Text> */}
+    <View style={styles.container}>
       <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-        <TouchableOpacity style={styles.roundedButton}>
+        
+        {/* Usando Link para navegar para a nova tela */}
+        <Link href="/groups/new" style={styles.roundedButton}>
           <Text style={styles.buttonText}>Criar Novo Grupo</Text>
-        </TouchableOpacity>
+        </Link>
 
         <TouchableOpacity style={styles.roundedButton}>
           <Text style={styles.buttonText}>Gerar Resumo de Reunião</Text>
@@ -36,15 +32,6 @@ export default function TabOneScreen() {
             </TouchableOpacity>
           </View>
         ))}
-
-        {/* Botão para alternar tema com ícones dentro do ScrollView */}
-        <TouchableOpacity style={styles.themeButton} onPress={toggleTheme}>
-          {isDarkMode ? (
-            <Ionicons name="sunny" size={24} color="#fff" />
-          ) : (
-            <Ionicons name="moon" size={24} color="#000" />
-          )}
-        </TouchableOpacity>
       </ScrollView>
     </View>
   );
@@ -55,19 +42,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
     padding: 20,
-  },
-  darkContainer: {
-    backgroundColor: '#000', // Cor de fundo no modo escuro
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#000',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  darkTitle: {
-    color: '#fff', // Cor do título no modo escuro
   },
   scrollContainer: {
     flex: 1,
@@ -84,11 +58,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 5,
     elevation: 8,
+    width: '100%',
   },
   buttonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+    textAlign: 'center', // Centraliza o texto
   },
   meetingContainer: {
     backgroundColor: '#5B2B90', // Fundo roxo do compartimento
@@ -122,7 +98,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   tag: {
-    backgroundColor: '#BC4EFF', // Cor do tag de Mobile/Programação
+    backgroundColor: '#BC4EFF',
     color: '#fff',
     fontSize: 12,
     paddingVertical: 4,
@@ -132,7 +108,7 @@ const styles = StyleSheet.create({
   },
   detailButton: {
     borderWidth: 1,
-    borderColor: '#FFFFFF', // Borda branca para o botão de detalhes
+    borderColor: '#FFFFFF',
     borderRadius: 10,
     paddingVertical: 10,
     alignItems: 'center',
@@ -140,11 +116,5 @@ const styles = StyleSheet.create({
   detailButtonText: {
     color: '#FFFFFF', // Texto branco no botão de detalhes
     fontWeight: 'bold',
-  },
-  themeButton: {
-    marginVertical: 20, // Espaço acima e abaixo do botão
-    alignSelf: 'center', // Centraliza o botão horizontalmente
-    backgroundColor: 'transparent', // Fundo transparente
-    padding: 10,
   },
 });
