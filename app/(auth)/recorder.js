@@ -1,10 +1,10 @@
-// app/(auth)/recorder.js
 import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Modal, TextInput } from "react-native";
 import { Audio } from "expo-av";
 import { FontAwesome } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Svg, Polyline } from "react-native-svg"; // Importando Polyline para o visualizador
+import * as DocumentPicker from "expo-document-picker";
+import RecordEvents from '../events/recordEvents'; // Corrigido para o nome correto
 
 export default function AudioRecordingScreen() {
   const [recording, setRecording] = useState(null);
@@ -13,10 +13,20 @@ export default function AudioRecordingScreen() {
   const [recordedUri, setRecordedUri] = useState(null);
   const [isPaused, setIsPaused] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
-  const [audioLevels, setAudioLevels] = useState([]); // Para armazenar os níveis de áudio
+  const [isPlaying, setIsPlaying] = useState(false); // Novo estado para controlar a reprodução
+
+  // Estado do popup
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [fileName, setFileName] = useState(""); // Nome do arquivo
+  const [group, setGroup] = useState(""); // Grupo associado
 
   // Função para iniciar a gravação
   async function startRecording() {
+    if (recording) { // Verifica se já está gravando
+      console.warn("Já existe uma gravação em andamento.");
+      return; // Não inicia uma nova gravação
+    }
+
     try {
       const permission = await Audio.requestPermissionsAsync();
       if (permission.status === "granted") {
@@ -32,8 +42,6 @@ export default function AudioRecordingScreen() {
         setRecordingStatus("Gravando...");
         setIsPaused(false);
         setRecordingTime(0);
-        setAudioLevels([]); // Limpa os níveis de áudio quando começa a gravar
-        startAudioMetering(); // Iniciar medição de áudio
       } else {
         alert("Permissão de gravação negada.");
       }
@@ -42,149 +50,145 @@ export default function AudioRecordingScreen() {
     }
   }
 
-  // Inicia a medição do nível de áudio
-  const startAudioMetering = async () => {
-    if (recording) {
-      const interval = setInterval(async () => {
-        const { meters } = await recording.getMeteringInfoAsync();
-        setAudioLevels((prevLevels) => {
-          // Mantém apenas os últimos 50 níveis de áudio para visualização
-          const newLevels = [...prevLevels, meters.rms];
-          return newLevels.slice(-50);
-        });
-      }, 100);
-      
-      // Armazenando o ID do intervalo para permitir a limpeza
-      return () => clearInterval(interval); // Limpar intervalo quando a gravação parar
-    }
-  };
+  // Função para abrir o seletor de arquivos e importar um arquivo
+  async function importFile() {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: "audio/*",
+        copyToCacheDirectory: true,
+      });
 
-  // Função para pausar a gravação
-  async function pauseRecording() {
-    if (recording) {
-      await recording.pauseAsync();
-      setRecordingStatus("Gravação pausada");
-      setIsPaused(true);
+      if (result.type === "success") {
+        console.log("Arquivo importado:", result.uri);
+        Alert.alert("Arquivo importado com sucesso!", result.name);
+      } else {
+        console.log("Importação de arquivo cancelada.");
+      }
+    } catch (error) {
+      console.error("Erro ao importar arquivo:", error);
     }
   }
 
-  // Função para continuar a gravação
-  async function resumeRecording() {
-    if (recording) {
-      await recording.startAsync();
-      setRecordingStatus("Gravando...");
-      setIsPaused(false);
-    }
-  }
+  // Listener para eventos personalizados
+  useEffect(() => {
+    const listenerId = RecordEvents.addListener('audioRecordingEvent', (data) => {
+      console.log('Evento de gravação recebido:', data);
+    });
+
+    return () => {
+      // Remover o listener ao desmontar o componente
+      RecordEvents.removeListener(listenerId);
+    };
+  }, []);
 
   // Função para parar a gravação
   async function stopRecording() {
     if (recording) {
+      setRecordingStatus("Gravação parada.");
       await recording.stopAndUnloadAsync();
-      const uri = recording.getURI();
+      const uri = recording.getURI(); // Obtém a URI da gravação
+      console.log("Gravação salva em:", uri); // Verifica a URI
       setRecordedUri(uri);
-      setRecording(null);
-      setRecordingStatus("Gravação finalizada.");
-      console.log("Gravação salva em:", uri);
+      setRecording(null); // Reseta o estado de gravação
+      setIsPlaying(false); // Reseta o estado de reprodução
+      setIsModalVisible(true); // Abre o popup ao parar a gravação
     }
   }
 
-  // Função para reproduzir o áudio gravado
+  // Função para pausar a gravação
+  async function pauseRecording() {
+    if (recording) {
+      setIsPaused(true);
+      await recording.pauseAsync();
+      setRecordingStatus("Gravação pausada.");
+    }
+  }
+
+  // Função para retomar a gravação
+  async function resumeRecording() {
+    if (recording) {
+      setIsPaused(false);
+      await recording.startAsync();
+      setRecordingStatus("Gravando...");
+    }
+  }
+
+  // Função para tocar a gravação
   async function playAudio() {
     if (recordedUri) {
       const { sound } = await Audio.Sound.createAsync({ uri: recordedUri });
       setSound(sound);
+      setIsPlaying(true); // Atualiza o estado de reprodução
       await sound.playAsync();
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (status.didJustFinish) {
+          setIsPlaying(false); // Reseta o estado ao terminar a reprodução
+        }
+      });
     }
   }
 
-  // Função para parar a reprodução do áudio
-  async function stopAudio() {
-    if (sound) {
-      await sound.stopAsync();
-      setSound(null);
-    }
-  }
-
-  // Função para salvar a gravação no AsyncStorage
-  const saveRecording = async () => {
-    if (recordedUri) {
+  // Função para salvar a gravação
+  async function saveRecording() {
+    if (recordedUri && fileName && group) {
       try {
-        const existingRecordings = await AsyncStorage.getItem("recordings");
+        // Aqui você pode adicionar a gravação à lista existente
+        const savedRecordings = await AsyncStorage.getItem('recordings');
+        const recordingsList = savedRecordings ? JSON.parse(savedRecordings) : [];
+
         const newRecording = {
-          uri: recordedUri,
           date: new Date().toLocaleString(),
-          duration: formatTime(recordingTime),
+          uri: recordedUri,
+          name: fileName,
+          group: group,
         };
 
-        let updatedRecordings = [];
-        if (existingRecordings !== null) {
-          updatedRecordings = JSON.parse(existingRecordings);
-        }
-
-        updatedRecordings.push(newRecording);
-        await AsyncStorage.setItem("recordings", JSON.stringify(updatedRecordings));
-        Alert.alert("Sucesso", "Gravação salva com sucesso!");
+        await AsyncStorage.setItem('recordings', JSON.stringify([...recordingsList, newRecording]));
+        Alert.alert('Gravação salva com sucesso!');
+        setIsModalVisible(false); // Fecha o popup após salvar
+        setFileName(""); // Reseta o nome do arquivo
+        setGroup(""); // Reseta o grupo
       } catch (error) {
         console.error("Erro ao salvar a gravação:", error);
-        Alert.alert("Erro", "Falha ao salvar a gravação.");
       }
+    } else {
+      Alert.alert('Por favor, preencha todos os campos.');
     }
-  };
+  }
 
   // Atualiza o tempo de gravação
   useEffect(() => {
-    let interval = null;
-    if (recording && !isPaused) {
-      interval = setInterval(() => {
+    let timer;
+
+    if (recording) {
+      timer = setInterval(() => {
         setRecordingTime((prevTime) => prevTime + 1);
-      }, 1000);
-    } else if (!recording || isPaused) {
-      clearInterval(interval);
+      }, 1000); // Atualiza a cada segundo
     }
 
-    return () => clearInterval(interval);
-  }, [recording, isPaused]);
-
-  // Formata o tempo de gravação no formato mm:ss
-  const formatTime = (seconds) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
-  };
-
-  // Normaliza os níveis de áudio para a visualização
-  const normalizeAudioLevels = () => {
-    if (audioLevels.length === 0) return [];
-    const maxLevel = Math.max(...audioLevels);
-    return audioLevels.map(level => (level / maxLevel) * 100); // Normaliza entre 0 e 100
-  };
+    return () => {
+      clearInterval(timer); // Limpa o intervalo ao desmontar ou parar a gravação
+    };
+  }, [recording]);
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Gravação de Áudio</Text>
 
-      {/* Exibe o tempo de gravação */}
       {recording && <Text style={styles.timerText}>{formatTime(recordingTime)}</Text>}
 
-      {/* Visualizador de Áudio */}
-      <View style={styles.visualizerContainer}>
-        <Svg height="100" width="300">
-          <Polyline
-            points={normalizeAudioLevels().map((level, index) => `${index * 6},${100 - level}`).join(" ")} // Converte os níveis de áudio para pontos
-            stroke="#5E17EB" // Cor do traço
-            strokeWidth="2"
-            fill="none"
-          />
-        </Svg>
+      <View style={styles.actionButtonsContainer}>
+        {!recording && (
+          <TouchableOpacity style={[styles.recordButton, styles.startButton]} onPress={startRecording}>
+            <FontAwesome name="microphone" size={32} color="white" />
+          </TouchableOpacity>
+        )}
+        {!recording && ( // Botão de importação só aparece se não estiver gravando
+          <TouchableOpacity style={[styles.importButton]} onPress={importFile}>
+            <FontAwesome name="file" size={32} color="white" />
+          </TouchableOpacity>
+        )}
       </View>
-
-      {/* Botões para iniciar, pausar e parar a gravação */}
-      {!recording && (
-        <TouchableOpacity style={[styles.recordButton, styles.startButton]} onPress={startRecording}>
-          <FontAwesome name="microphone" size={32} color="white" />
-        </TouchableOpacity>
-      )}
 
       {recording && (
         <View style={styles.controlsContainer}>
@@ -205,17 +209,48 @@ export default function AudioRecordingScreen() {
 
       <Text style={styles.statusText}>{recordingStatus}</Text>
 
-      {/* Botões para ouvir e parar o áudio gravado */}
-      {recordedUri && (
+      {recordedUri && !recording && ( // Os botões de reprodução e salvar só aparecem se não estiver gravando
         <View style={styles.playbackContainer}>
           <TouchableOpacity style={styles.playButton} onPress={playAudio}>
             <FontAwesome name="play" size={24} color="white" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.saveButton} onPress={saveRecording}>
+          <TouchableOpacity style={styles.saveButton} onPress={() => setIsModalVisible(true)}>
             <FontAwesome name="save" size={24} color="white" />
           </TouchableOpacity>
         </View>
       )}
+
+      {/* Modal para o Popup */}
+      <Modal
+        transparent={true}
+        animationType="slide"
+        visible={isModalVisible}
+        onRequestClose={() => setIsModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Salvar Gravação</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Nome do arquivo"
+              value={fileName}
+              onChangeText={setFileName}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Grupo"
+              value={group}
+              onChangeText={setGroup}
+            />
+            <TouchableOpacity style={styles.saveButton} onPress={saveRecording}>
+              <Text style={styles.saveButtonText}>Salvar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setIsModalVisible(false)}>
+              <Text style={styles.cancelButtonText}>Cancelar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -236,81 +271,114 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   timerText: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "#FF4C4C", // Cor do tempo de gravação
-    marginBottom: 10,
+    fontSize: 20,
+    color: "#666",
   },
-  visualizerContainer: {
-    marginBottom: 20,
+  actionButtonsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
     alignItems: "center",
+    width: "100%",
   },
   recordButton: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 20,
-    elevation: 5, // Sombra para botão de gravação
+    backgroundColor: "#5E17EB",
+    padding: 20,
+    borderRadius: 50,
+    elevation: 4, // Sombra
+  },
+  importButton: {
+    backgroundColor: "#28A745",
+    padding: 20,
+    borderRadius: 50,
+    elevation: 4, // Sombra
   },
   controlsContainer: {
     flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    width: 220,
-  },
-  controlButton: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
     justifyContent: "center",
     alignItems: "center",
-    margin: 10,
-    elevation: 3, // Sombra para os botões de controle
+    marginTop: 20,
   },
-  startButton: {
-    backgroundColor: "#5E17EB", // Cor para iniciar gravação
+  controlButton: {
+    backgroundColor: "#FF0000",
+    padding: 10,
+    borderRadius: 30,
+    margin: 10,
+    elevation: 4, // Sombra
   },
   pauseButton: {
-    backgroundColor: "#FF4C4C", // Cor para pausar
+    backgroundColor: "#FFA500",
   },
   resumeButton: {
-    backgroundColor: "#5E17EB", // Cor para continuar
+    backgroundColor: "#28A745",
   },
   stopButton: {
-    backgroundColor: "#FF4C4C", // Cor para parar
-  },
-  statusText: {
-    fontSize: 16,
-    color: "#333",
-    marginTop: 10,
+    backgroundColor: "#FF0000",
   },
   playbackContainer: {
     flexDirection: "row",
-    justifyContent: "space-around",
+    justifyContent: "center",
     alignItems: "center",
-    width: 180,
     marginTop: 20,
   },
   playButton: {
-    width: 60,
-    height: 60,
+    backgroundColor: "#007BFF",
+    padding: 10,
     borderRadius: 30,
-    backgroundColor: "#5E17EB", // Cor para reproduzir
-    justifyContent: "center",
-    alignItems: "center",
     margin: 10,
-    elevation: 3, // Sombra para o botão de play
+    elevation: 4, // Sombra
   },
   saveButton: {
-    width: 60,
-    height: 60,
+    backgroundColor: "#FFC107",
+    padding: 10,
     borderRadius: 30,
-    backgroundColor: "#FF4C4C", // Cor para salvar
+    margin: 10,
+    elevation: 4, // Sombra
+  },
+  statusText: {
+    fontSize: 16,
+    marginTop: 20,
+    color: "#666",
+  },
+  modalContainer: {
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    margin: 10,
-    elevation: 3, // Sombra para o botão de salvar
+    backgroundColor: "rgba(0, 0, 0, 0.5)", // Fundo semi-transparente
+  },
+  modalContent: {
+    width: 300,
+    padding: 20,
+    backgroundColor: "white",
+    borderRadius: 10,
+    elevation: 5, // Sombra
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 20,
+  },
+  input: {
+    height: 40,
+    borderColor: "#ccc",
+    borderWidth: 1,
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 10,
+  },
+  saveButtonText: {
+    color: "white",
+    textAlign: "center",
+  },
+  cancelButtonText: {
+    color: "blue",
+    textAlign: "center",
+    marginTop: 10,
   },
 });
+
+// Função para formatar o tempo
+const formatTime = (seconds) => {
+  const minutes = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${minutes < 10 ? '0' : ''}${minutes}:${secs < 10 ? '0' : ''}${secs}`;
+};

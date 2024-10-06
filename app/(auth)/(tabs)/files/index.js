@@ -1,108 +1,104 @@
-// Importações necessárias
 import React, { useEffect, useState } from "react";
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from "react-native";
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, RefreshControl } from "react-native";
+import { Audio } from "expo-av";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { FontAwesome } from "@expo/vector-icons";
-import { Audio } from "expo-av";
 import { useRouter } from "expo-router";
-import recordingEvents from '../../../events/recordEvents'; // Importa os eventos de gravação
 
-export default function FilesScreen() {
+const Files = () => {
   const [recordings, setRecordings] = useState([]);
-  const [playingSound, setPlayingSound] = useState(null);
   const [playingUri, setPlayingUri] = useState(null);
+  const [playingSound, setPlayingSound] = useState(null); // Para armazenar o objeto sound
+  const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
 
-  // Função para buscar as gravações do AsyncStorage
   const fetchRecordings = async () => {
     try {
       const storedRecordings = await AsyncStorage.getItem("recordings");
       if (storedRecordings !== null) {
-        setRecordings(JSON.parse(storedRecordings));
+        const recordingsList = JSON.parse(storedRecordings);
+        setRecordings(recordingsList);
+      } else {
+        setRecordings([]);
       }
     } catch (error) {
       console.error("Erro ao buscar gravações:", error);
       Alert.alert("Erro", "Falha ao buscar gravações.");
+    } finally {
+      setRefreshing(false);
     }
   };
 
-  // Função para tocar o áudio
-  const playAudio = async (uri) => {
-    if (playingUri === uri) {
-      await stopAudio();
-    } else {
-      const { sound } = await Audio.Sound.createAsync({ uri });
-      setPlayingUri(uri);
-      setPlayingSound(sound);
-
-      await sound.playAsync();
-
-      sound.setOnPlaybackStatusUpdate(async (status) => {
-        if (status.didJustFinish) {
-          setPlayingUri(null);
-          setPlayingSound(null);
-        }
-      });
-    }
-  };
-
-  // Função para parar o áudio
-  const stopAudio = async () => {
-    if (playingSound) {
-      await playingSound.stopAsync();
-      setPlayingUri(null);
-      setPlayingSound(null);
-    }
-  };
-
-  // Função para deletar uma gravação
-  const deleteRecording = async (uri) => {
-    try {
-      const updatedRecordings = recordings.filter(recording => recording.uri !== uri);
-      setRecordings(updatedRecordings);
-      await AsyncStorage.setItem("recordings", JSON.stringify(updatedRecordings));
-      Alert.alert("Sucesso", "Gravação removida com sucesso.");
-    } catch (error) {
-      console.error("Erro ao deletar gravação:", error);
-      Alert.alert("Erro", "Falha ao remover gravação.");
-    }
-  };
-
-  // UseEffect para buscar gravações e escutar eventos
   useEffect(() => {
-    fetchRecordings();
-    
-    // Listener para novas gravações
-    const onNewRecordingAdded = () => {
-      fetchRecordings(); // Atualiza a lista de gravações
-    };
-
-    recordingEvents.on('newRecordingAdded', onNewRecordingAdded);
-
-    // Limpeza do listener
+    fetchRecordings(); // Busca gravações quando o componente é montado
     return () => {
-      recordingEvents.removeListener('newRecordingAdded', onNewRecordingAdded);
+      // Limpa o som quando o componente é desmontado
+      if (playingSound) {
+        playingSound.unloadAsync();
+      }
     };
   }, []);
 
-  const renderRecording = ({ item }) => (
-    <View style={styles.recordingItem}>
-      <Text style={styles.recordingText}>
-        {item.date} - {item.duration}
-      </Text>
-      <View style={styles.buttonsContainer}>
-        <TouchableOpacity 
-          style={styles.playButton} 
-          onPress={() => playAudio(item.uri)}
-        >
-          <FontAwesome name={playingUri === item.uri ? "pause" : "play"} size={20} color="white" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.deleteButton} onPress={() => deleteRecording(item.uri)}>
-          <FontAwesome name="trash" size={20} color="white" />
-        </TouchableOpacity>
+  const playAudio = async (uri) => {
+    if (playingUri === uri) {
+      // Se já está tocando o mesmo áudio, pausa
+      if (playingSound) {
+        await playingSound.pauseAsync();
+        setPlayingSound(null); // Reseta o estado do som tocando
+      }
+      setPlayingUri(null);
+    } else {
+      // Para pausar o áudio anterior, se existir
+      if (playingSound) {
+        await playingSound.stopAsync();
+        await playingSound.unloadAsync(); // Limpa o som anterior
+      }
+
+      // Cria um novo som e inicia
+      const { sound } = await Audio.Sound.createAsync({ uri });
+      setPlayingSound(sound);
+      setPlayingUri(uri);
+      await sound.playAsync();
+    }
+  };
+
+  const deleteRecording = async (uri) => {
+    try {
+      const newRecordings = recordings.filter((recording) => recording.uri !== uri);
+      await AsyncStorage.setItem("recordings", JSON.stringify(newRecordings));
+      setRecordings(newRecordings);
+      Alert.alert("Sucesso", "Gravação excluída com sucesso.");
+    } catch (error) {
+      console.error("Erro ao deletar gravação:", error);
+      Alert.alert("Erro", "Falha ao deletar gravação.");
+    }
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchRecordings(); // Chama a função para buscar gravações ao atualizar
+  };
+
+  const renderRecording = ({ item }) => {
+    return (
+      <View style={styles.recordingItem}>
+        <Text style={styles.recordingText}>
+          {item.date} - {item.duration}
+        </Text>
+        <View style={styles.buttonsContainer}>
+          <TouchableOpacity
+            style={styles.playButton}
+            onPress={() => playAudio(item.uri)}
+          >
+            <FontAwesome name={playingUri === item.uri ? "pause" : "play"} size={20} color="white" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.deleteButton} onPress={() => deleteRecording(item.uri)}>
+            <FontAwesome name="trash" size={20} color="white" />
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -113,6 +109,9 @@ export default function FilesScreen() {
           data={recordings}
           renderItem={renderRecording}
           keyExtractor={(item, index) => index.toString()}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
         />
       )}
       <TouchableOpacity style={styles.floatingButton} onPress={() => router.push('recorder')}>
@@ -120,67 +119,56 @@ export default function FilesScreen() {
       </TouchableOpacity>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: "#F7F7F7",
+    backgroundColor: "#f5f5f5",
   },
   noRecordingsText: {
-    fontSize: 18,
-    color: "gray",
     textAlign: "center",
-    marginTop: 30,
+    marginTop: 20,
+    fontSize: 16,
+    color: "#888",
   },
   recordingItem: {
+    padding: 15,
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    marginBottom: 10,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    padding: 15,
-    marginBottom: 15,
-    borderRadius: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
   },
   recordingText: {
-    fontSize: 18,
-    color: "#555",
-    flex: 1,
+    fontSize: 16,
+    color: "#333",
   },
   buttonsContainer: {
     flexDirection: "row",
+    alignItems: "center",
   },
   playButton: {
-    marginRight: 10,
     backgroundColor: "#5E17EB",
-    padding: 8,
-    borderRadius: 8,
+    padding: 10,
+    borderRadius: 5,
+    marginRight: 10,
   },
   deleteButton: {
-    backgroundColor: "#FF4C4C",
-    padding: 8,
-    borderRadius: 8,
+    backgroundColor: "#dc3545",
+    padding: 10,
+    borderRadius: 5,
   },
   floatingButton: {
     position: "absolute",
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    bottom: 20,
+    right: 20,
     backgroundColor: "#5E17EB",
-    justifyContent: "center",
-    alignItems: "center",
-    bottom: 30,
-    right: 30,
-    elevation: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
+    borderRadius: 50,
+    padding: 15,
   },
 });
+
+export default Files;
