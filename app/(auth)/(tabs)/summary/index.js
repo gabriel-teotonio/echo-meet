@@ -1,8 +1,10 @@
+import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 // import { Link } from 'expo-router';
 
 
-export default function Summary() {
+export default function Summaries() {
+  const router = useRouter();
   return (
     <View style={styles.container}>
     <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
@@ -15,7 +17,7 @@ export default function Summary() {
               <Text style={styles.tag}>Mobile</Text>
               <Text style={styles.tag}>Programação</Text>
             </View>
-            <TouchableOpacity style={styles.detailButton}>
+            <TouchableOpacity onPress={() => router.push(`/summary/${index}`)} style={styles.detailButton}>
               <Text style={styles.detailButtonText}>Ver Detalhes</Text>
             </TouchableOpacity>
           </View>
