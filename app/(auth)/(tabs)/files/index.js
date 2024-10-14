@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, RefreshControl } from "react-native";
 import { Audio } from "expo-av";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { FontAwesome } from "@expo/vector-icons";
+import { FontAwesome, MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
 const Files = () => {
@@ -37,7 +37,7 @@ const Files = () => {
         playingSound.unloadAsync();
       }
     };
-  }, []);
+  }, [recordings]);
 
   const playAudio = async (uri) => {
     if (playingUri === uri) {
@@ -82,10 +82,18 @@ const Files = () => {
   const renderRecording = ({ item }) => {
     return (
       <View style={styles.recordingItem}>
-        <Text style={styles.recordingText}>
-          {item.date} - {item.duration}
+        <View style={styles.containText}>
+        <Text style={styles.recordItemTitle}>
+          {item.name}
         </Text>
+        <Text style={styles.recordingText}>
+          {item.date}
+        </Text>
+        </View>
         <View style={styles.buttonsContainer}>
+          <TouchableOpacity style={styles.generateButton}>
+            <MaterialIcons name="generating-tokens" size={20} color="white" />
+          </TouchableOpacity>
           <TouchableOpacity
             style={styles.playButton}
             onPress={() => playAudio(item.uri)}
@@ -127,6 +135,14 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: "#f5f5f5",
   },
+  containText:{
+    
+  },
+  recordItemTitle:{
+    fontSize: 18,
+    fontWeight: "semibold",
+    marginBottom: 3,
+  },
   noRecordingsText: {
     textAlign: "center",
     marginTop: 20,
@@ -143,21 +159,26 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   recordingText: {
-    fontSize: 16,
+    fontSize: 14,
     color: "#333",
   },
   buttonsContainer: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 5
   },
   playButton: {
-    backgroundColor: "#5E17EB",
+    backgroundColor: "green",
     padding: 10,
     borderRadius: 5,
-    marginRight: 10,
   },
   deleteButton: {
     backgroundColor: "#dc3545",
+    padding: 10,
+    borderRadius: 5,
+  },
+  generateButton: {
+    backgroundColor: "#3A21B8",
     padding: 10,
     borderRadius: 5,
   },

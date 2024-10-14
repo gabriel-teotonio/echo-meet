@@ -41,7 +41,7 @@ export default function SummaryDetails() {
         <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={true}>
 
         <Markdown>{markdownContent}</Markdown>
-</ScrollView>
+        </ScrollView>
       </View>
     </View>
   );
