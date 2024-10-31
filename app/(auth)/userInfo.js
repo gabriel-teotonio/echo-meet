@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, Switch, StyleSheet, Image } from 'react-native';
 import { useSession } from '../ctx';
-import { TouchableOpacity } from 'react-native-gesture-handler';
 
 export default function UserInfoScreen() {
   const { session } = useSession();
