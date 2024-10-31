@@ -10,6 +10,9 @@ export default function GroupDetailsLayout() {
       <Tabs.Screen name="index" 
       options={{ title: 'Participantes', 
         tabBarIcon: ({ color }) => <FontAwesome name="users" color={color} size={24} />}} />
+      <Tabs.Screen name="summaries" 
+      options={{ title: 'Resumos', 
+        tabBarIcon: ({ color }) => <FontAwesome name="paper-plane" color={color} size={24} />}} />
       <Tabs.Screen name="audioFiles" 
       options={{ title: 'Arquivos de Áudio',
         tabBarIcon: ({ color }) => <FontAwesome name="file-sound-o" color={color} size={24} />

@@ -1,18 +1,38 @@
-import { StyleSheet, Text, View, TouchableOpacity, Alert } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { AntDesign, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import axios from 'axios';
+import { useSession } from '../../../ctx';
 
 export default function GroupsScreen() {
   const router = useRouter();
+  const {session} = useSession()
+
 
   // Estado local para armazenar os grupos
-  const [groups, setGroups] = useState([
-    { id: 1, name: 'Grupo do Financeiro' },
-    { id: 2, name: 'Grupo de Tecnologia' },
-    { id: 3, name: 'Grupo de Marketing' },
-    { id: 4, name: 'Grupo de Recursos Humanos' }
-  ]);
+  const [groups, setGroups] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+
+  // Função para buscar grupos do backend
+  const fetchGroups = async () => {
+    try {
+      const res = await axios.get('http://45.169.29.120:8000/groups/silva', {
+        headers: {
+          Authorization: `Bearer ${session}`,
+        },
+      });
+      console.log(res.data)
+      setGroups(res.data);
+    } catch (error) {
+      console.error("Erro ao buscar grupos:", error);
+      setError(error.message); // Captura o erro e armazena na variável de erro
+    } finally {
+      setLoading(false); // Define loading como false ao final da requisição
+    }
+  };
 
   // Função para remover grupo
   const removeGroup = (groupId) => {
@@ -40,6 +60,18 @@ export default function GroupsScreen() {
   const createNewGroup = () => {
     router.push('/groups/new'); // Redireciona para a página de criação do grupo
   };
+
+  useEffect(() => {
+    fetchGroups(); // Chama a função para buscar grupos ao montar o componente
+  }, []);
+
+  if (loading) {
+    return <ActivityIndicator size="large" color="#0000ff" />;
+  }
+
+  if (error) {
+    return <Text>Error: {error}</Text>;
+  }
 
   return (
     <View style={styles.container}>

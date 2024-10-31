@@ -9,16 +9,6 @@ export default function TabOneScreen() {
   return (
     <View style={styles.container}>
       <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-        
-        <TouchableOpacity
-          activeOpacity={0.8}
-          style={styles.roundedButton}
-          onPress={() => router.push("/groups/new")} 
-        >
-          <FontAwesome name="plus-circle" size={32} color="white" />
-          <Text style={styles.buttonText}>Criar Novo Grupo</Text>
-        </TouchableOpacity>
-
         {/* Botão para fazer upload de reunião/audio */}
         <TouchableOpacity 
         activeOpacity={0.8} 

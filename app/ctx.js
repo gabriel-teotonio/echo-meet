@@ -38,8 +38,8 @@ export function SessionProvider(props) {
       },
     });
 
-    console.log("Resposta da API:", response.data);
     const token = response.data.access_token;
+    console.log(token)
 
     // Define o token como sessão
     setSession(token);
