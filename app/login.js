@@ -6,12 +6,23 @@ import { useRouter } from "expo-router";
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState(""); // State to hold the error message
+
   const { signIn } = useSession();
   const router = useRouter();
 
-  const handleLogin = () => {
-    signIn(email, password);
-    router.replace("/");
+  const handleLogin = async () => {
+    try {
+      const success = await signIn(email, password);
+      if (success) {
+        router.replace("/");
+      } else {
+        setError("Usuário ou senha incorretos.");
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Erro ao fazer login. Tente novamente.");
+    }
   };
 
   return (
@@ -33,7 +44,7 @@ export default function Login() {
         value={password}
         onChangeText={setPassword}
       />
-
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
       <TouchableOpacity style={styles.button} onPress={handleLogin}>
         <Text style={styles.buttonText}>Login</Text>
       </TouchableOpacity>
@@ -88,4 +99,9 @@ const styles = StyleSheet.create({
     color: "#5E17EB",
     fontSize: 16,
   },
+  errorText: {
+    color: "red",
+    fontSize: 14,
+    marginBottom: 20,
+  }
 });

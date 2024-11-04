@@ -9,7 +9,7 @@ const AuthContext = React.createContext({
   isLoading: false,
 });
 
-// Hook para acessar informações do usuário
+// Hook to access user information
 export function useSession() {
   const value = React.useContext(AuthContext);
   if (process.env.NODE_ENV !== "production") {
@@ -17,7 +17,6 @@ export function useSession() {
       throw new Error("useSession must be wrapped in a <SessionProvider />");
     }
   }
-
   return value;
 }
 
@@ -25,27 +24,23 @@ export function SessionProvider(props) {
   const [[isLoading, session], setSession] = useStorageState("session");
 
   const signIn = async (email, password) => {
-      const formData = new URLSearchParams();
-      formData.append("username", email);
-      formData.append("password", password);
+    const formData = new URLSearchParams();
+    formData.append("username", email);
+    formData.append("password", password);
 
-      console.log("FormData como string:", formData.toString());
+    try {
+      const response = await axios.post("http://45.169.29.120:8000/login", formData, {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      });
 
-  try {
-    const response = await axios.post("http://45.169.29.120:8000/login", formData, {
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-    });
-
-    const token = response.data.access_token;
-    console.log(token)
-
-    // Define o token como sessão
-    setSession(token);
-  } catch (error) {
-    console.error("Erro ao fazer login:", error);
-  }
+      setSession(response.data);
+      return true; // Success
+    } catch (error) {
+      console.error("Login error:", error);
+      return false; // Failure
+    }
   };
 
   const signOut = () => {

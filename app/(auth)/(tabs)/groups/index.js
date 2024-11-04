@@ -19,12 +19,12 @@ export default function GroupsScreen() {
   // Função para buscar grupos do backend
   const fetchGroups = async () => {
     try {
-      const res = await axios.get('http://45.169.29.120:8000/groups/silva', {
+      const res = await axios.get(`http://45.169.29.120:8000/grupos/user`, {
         headers: {
-          Authorization: `Bearer ${session}`,
+          "Content-Type": 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
         },
       });
-      console.log(res.data)
       setGroups(res.data);
     } catch (error) {
       console.error("Erro ao buscar grupos:", error);
@@ -62,7 +62,7 @@ export default function GroupsScreen() {
   };
 
   useEffect(() => {
-    fetchGroups(); // Chama a função para buscar grupos ao montar o componente
+    fetchGroups();
   }, []);
 
   if (loading) {
