@@ -1,17 +1,20 @@
 import React, { useState } from "react";
-import { StyleSheet, Text, TextInput, View, TouchableOpacity } from "react-native";
+import { StyleSheet, Text, TextInput, View, TouchableOpacity, ActivityIndicator } from "react-native";
 import { useSession } from "./ctx";
 import { useRouter } from "expo-router";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState(""); // State to hold the error message
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false); // State to handle loading
 
   const { signIn } = useSession();
   const router = useRouter();
 
   const handleLogin = async () => {
+    setIsLoading(true); // Start loading
+    setError(""); // Clear any previous error
     try {
       const success = await signIn(email, password);
       if (success) {
@@ -22,6 +25,8 @@ export default function Login() {
     } catch (err) {
       console.error(err);
       setError("Erro ao fazer login. Tente novamente.");
+    } finally {
+      setIsLoading(false); // Stop loading
     }
   };
 
@@ -44,9 +49,19 @@ export default function Login() {
         value={password}
         onChangeText={setPassword}
       />
+      
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>Login</Text>
+      
+      <TouchableOpacity
+        style={[styles.button, isLoading && styles.buttonDisabled]} // Apply disabled style if loading
+        onPress={handleLogin}
+        disabled={isLoading} // Disable button if loading
+      >
+        {isLoading ? (
+          <ActivityIndicator size="small" color="#fff" /> // Show loader if loading
+        ) : (
+          <Text style={styles.buttonText}>Login</Text>
+        )}
       </TouchableOpacity>
     </View>
   );
@@ -87,21 +102,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
   },
-  forgotPassword: {
-    alignSelf: "flex-end",
-    marginBottom: 30,
-  },
-  forgotText: {
-    color: "#000",
-    fontSize: 14,
-  },
-  registerText: {
-    color: "#5E17EB",
-    fontSize: 16,
+  buttonDisabled: {
+    backgroundColor: "#A49BE8", // Lighter color to indicate disabled state
   },
   errorText: {
     color: "red",
     fontSize: 14,
     marginBottom: 20,
-  }
+  },
 });

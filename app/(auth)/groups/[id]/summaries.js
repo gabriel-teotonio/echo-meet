@@ -1,23 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
 import axios from 'axios';
+import { useSession } from '../../../ctx';
+import { useLocalSearchParams } from 'expo-router';
 
 export default function Summaries() {
-  const { id } = route.params; // Pega o ID do grupo atual passado como parâmetro na navegação
-  const [reunioes, setReunioes] = useState([]);
+  const { id } = useLocalSearchParams();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  console.log("id", id)
-  
-  // Aqui você deve pegar o token de acesso do usuário (você pode usar o contexto ou outra abordagem)
-  const user = { access_token: 'YOUR_ACCESS_TOKEN' }; // Substitua pelo seu método de obtenção do token
+  const { session} = useSession();
 
   const getSummaries = async () => {
     try {
       const res = await axios.get(`http://45.169.29.120:8000/grupos/${id}/reunioes`, {
         headers: {
-          Authorization: `Bearer ${user.access_token}`,
+          Authorization: `Bearer ${session.access_token}`,
         },
       });
       setReunioes(res.data);
@@ -30,6 +27,7 @@ export default function Summaries() {
   };
 
   useEffect(() => {
+    console.log("id:", id);
     getSummaries();
   }, [id]);
 

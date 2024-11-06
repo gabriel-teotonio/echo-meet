@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, Switch, StyleSheet, Image } from 'react-native';
+import { View, Text, Switch, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { useSession } from '../ctx';
 
 export default function UserInfoScreen() {
-  const { session } = useSession();
+  const { session, signOut } = useSession();
   const [isDarkMode, setIsDarkMode] = useState(false); // Estado para gerenciar o tema
 
   const toggleTheme = () => {
@@ -11,16 +11,24 @@ export default function UserInfoScreen() {
     // Aqui você pode adicionar a lógica para salvar o tema no contexto ou no armazenamento local se necessário.
   };
 
+  const handleLogout = () => {
+    signOut();
+  };
+
   return (
     <View style={[styles.container, isDarkMode && styles.darkContainer]}>
       <Text style={[styles.title, isDarkMode && styles.darkTitle]}>Informações do Usuário</Text>
       <View style={styles.userInfoContainer}>
         <Image
-          source={{ uri: session.user?.profilePicture || 'https://via.placeholder.com/150' }}
+          source={{ uri: session?.user?.profilePicture || 'https://via.placeholder.com/150' }}
           style={styles.profilePicture}
         />
-        <Text style={[styles.infoText, isDarkMode && styles.darkText]}>Nome: {session.user?.name || 'Nome não disponível'}</Text>
-        <Text style={[styles.infoText, isDarkMode && styles.darkText]}>Login: {session.user?.login || 'Login não disponível'}</Text>
+        <Text style={[styles.infoText, isDarkMode && styles.darkText]}>
+          Nome: {session?.user?.name || 'Nome não disponível'}
+        </Text>
+        <Text style={[styles.infoText, isDarkMode && styles.darkText]}>
+          Login: {session?.user?.login || 'Login não disponível'}
+        </Text>
       </View>
       <View style={styles.themeToggleContainer}>
         <Text style={[styles.toggleLabel, isDarkMode && styles.darkText]}>Modo Escuro</Text>
@@ -31,6 +39,9 @@ export default function UserInfoScreen() {
           thumbColor={isDarkMode ? '#f5dd4b' : '#f4f3f4'}
         />
       </View>
+      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+        <Text style={styles.logoutButtonText}>Logout</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -80,5 +91,16 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#000',
   },
+  logoutButton: {
+    marginTop: 30,
+    padding: 15,
+    backgroundColor: '#d9534f',
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  logoutButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
 });
-
