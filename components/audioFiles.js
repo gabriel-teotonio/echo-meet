@@ -5,7 +5,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { FontAwesome } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
- const AudioFiles = () => {
+ const AudioFiles = ({grupoId}) => {
   const [recordings, setRecordings] = useState([]);
   const [playingUri, setPlayingUri] = useState(null);
   const [playingSound, setPlayingSound] = useState(null); // Para armazenar o objeto sound

@@ -1,33 +1,36 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
 import axios from 'axios';
-import { useSession } from '../../../ctx';
-import { useLocalSearchParams } from 'expo-router';
+import { useSession } from '../app/ctx';
+import { useLocalSearchParams, Link, router } from 'expo-router';
 
-export default function Summaries() {
+export default function Summaries({ grupoId }) {
   const { id } = useLocalSearchParams();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { session} = useSession();
+  const [reunioes, setReunioes] = useState([]);
+
+  const { session } = useSession();
 
   const getSummaries = async () => {
     try {
+      setLoading(true);
       const res = await axios.get(`http://45.169.29.120:8000/grupos/${id}/reunioes`, {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
       });
+      console.log(res.data);
       setReunioes(res.data);
     } catch (error) {
       console.error("Erro ao buscar resumos:", error);
-      setError(error.message); // Captura o erro e armazena na variável de erro
+      setError(error.message);
     } finally {
-      setLoading(false); // Define loading como false ao final da requisição
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    console.log("id:", id);
     getSummaries();
   }, [id]);
 
@@ -41,15 +44,13 @@ export default function Summaries() {
 
   return (
     <View style={styles.container}>
-      <FlatList
-        data={reunioes}
-        keyExtractor={(item) => item.id.toString()} // Supondo que cada reunião tenha um ID
-        renderItem={({ item }) => (
-          <TouchableOpacity style={styles.summaryItem}>
-            <Text style={styles.summaryText}>{item.title}</Text> {/* Ajuste o campo conforme necessário */}
-          </TouchableOpacity>
-        )}
-      />
+     {reunioes.map((item) => (
+      <TouchableOpacity 
+      onPress={() => router.push(`/summary/${item.meeting_id}`)}
+      style={styles.summaryItem}>
+        <Text style={styles.summaryText}>{item.meeting_name}</Text>
+      </TouchableOpacity>
+     ))}
     </View>
   );
 }

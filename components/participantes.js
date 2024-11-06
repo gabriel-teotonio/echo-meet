@@ -3,7 +3,7 @@ import { AntDesign, MaterialIcons } from '@expo/vector-icons';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 // import { useSearchParams } from 'expo-router';
 
-export default function Participants() {
+export default function Participants({grupoId}) {
 //   const { id } = useSearchParams();
 
   // Exemplo de participantes para cada grupo
