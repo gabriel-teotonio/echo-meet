@@ -100,10 +100,6 @@ export default function GroupsScreen() {
             </View>
           </TouchableOpacity>
         ))}
-        {/* Botão de novo grupo */}
-        <TouchableOpacity style={styles.newGroupButton} onPress={createNewGroup}>
-          <Text style={styles.newGroupButtonText}>+ Novo Grupo</Text>
-        </TouchableOpacity>
       </View>
     </View>
   );
