@@ -23,7 +23,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="summary/index"
+        name="summary/[id]"
         options={{
           title: "Reuniões",
           tabBarIcon: ({ color }) => <FontAwesome name="wechat" color={color} size={24}/>,

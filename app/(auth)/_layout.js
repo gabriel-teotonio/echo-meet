@@ -44,12 +44,6 @@ export default function AppLayout() {
           )
         }} 
       />
-      <Stack.Screen name="groups/[id]" options={{
-        headerTitle: 'Grupo do Financeiro'
-      }}/>
-      <Stack.Screen name="summary/[id]" options={{
-        headerTitle: 'Detalhes da Reunião'
-      }}/>
       <Stack.Screen name="recorder" />
       <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
     </Stack>

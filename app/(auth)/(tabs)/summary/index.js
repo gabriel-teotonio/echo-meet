@@ -1,33 +1,70 @@
-import { useRouter } from 'expo-router';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-// import { Link } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import axios from 'axios';
+import { useSession } from '../../../ctx';
 
-
-export default function Summaries() {
+export default function Summaries({ groupId }) {
   const router = useRouter();
+  const [summaries, setSummaries] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { session } = useSession();
+
+  console.log("Sessão reu:",session)
+  console.log("ID:", groupId)
+
+  useEffect(() => {
+    const fetchSummaries = async () => {
+      try {
+        const response = await axios.get(`https://app.echomeets.online/grupos/${id}/reunioes`, {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`, 
+          },
+        });
+        console.log(response.data)
+        setSummaries(response.data); 
+      } catch (err) {
+        setError(err.message || 'Erro ao carregar resumos');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSummaries();
+  }, [groupId]);
+
+  if (loading) {
+    return <ActivityIndicator size="large" color="#0000ff" />;
+  }
+
+  if (error) {
+    return <Text style={styles.errorText}>Error: {error}</Text>;
+  }
+
   return (
     <View style={styles.container}>
-    <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-
-      {Array.from({ length: 5 }).map((_, index) => (
+      <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+        {summaries.map((summary, index) => (
           <View key={index} style={styles.meetingContainer}>
-            <Text style={styles.meetingTitle}>Reunião de Planejamento do sistema</Text>
-            <Text style={styles.meetingDate}>03/08/2024, Segunda-Feira - 10:00</Text>
+            <Text style={styles.meetingTitle}>{summary.title}</Text>
+            <Text style={styles.meetingDate}>{summary.date}</Text>
             <View style={styles.tagContainer}>
-              <Text style={styles.tag}>Mobile</Text>
-              <Text style={styles.tag}>Programação</Text>
+              {summary.tags.map((tag, tagIndex) => (
+                <Text key={tagIndex} style={styles.tag}>{tag}</Text>
+              ))}
             </View>
-            <TouchableOpacity onPress={() => router.push(`/summary/${index}`)} style={styles.detailButton}>
+            <TouchableOpacity 
+              onPress={() => router.push(`/summary/${summary.id}`)} 
+              style={styles.detailButton}>
               <Text style={styles.detailButtonText}>Ver Detalhes</Text>
             </TouchableOpacity>
           </View>
         ))}
       </ScrollView>
-
     </View>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
@@ -38,36 +75,13 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flex: 1,
   },
-  roundedButton: {
-    backgroundColor: "#5E17EB", // Botão roxo
-    borderRadius: 25,
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    marginBottom: 15,
-    alignItems: 'center',
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 8,
-    width: '100%',
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center', // Centraliza o texto
-  },
   meetingContainer: {
-    backgroundColor: '#5B2B90', // Fundo roxo do compartimento
+    backgroundColor: '#5B2B90',
     borderRadius: 20,
     padding: 20,
     marginVertical: 10,
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 10,
     elevation: 5,
@@ -77,12 +91,12 @@ const styles = StyleSheet.create({
   meetingTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#fff', // Texto branco
+    color: '#fff',
     marginBottom: 10,
   },
   meetingDate: {
     fontSize: 14,
-    color: '#fff', // Texto branco
+    color: '#fff',
     marginBottom: 15,
   },
   tagContainer: {
@@ -106,8 +120,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   detailButtonText: {
-    color: '#FFFFFF', // Texto branco no botão de detalhes
+    color: '#FFFFFF',
     fontWeight: 'bold',
   },
+  errorText: {
+    color: 'red',
+    textAlign: 'center',
+    marginVertical: 20,
+  },
 });
-

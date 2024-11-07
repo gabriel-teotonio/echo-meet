@@ -19,7 +19,7 @@ export default function GroupsScreen() {
   // Função para buscar grupos do backend
   const fetchGroups = async () => {
     try {
-      const res = await axios.get(`http://45.169.29.120:8000/grupos/user`, {
+      const res = await axios.get(`https://app.echomeets.online/grupos/user`, {
         headers: {
           "Content-Type": 'application/json',
           Authorization: `Bearer ${session.access_token}`,

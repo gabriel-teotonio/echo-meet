@@ -1,20 +1,50 @@
-import { useGlobalSearchParams } from 'expo-router';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { useGlobalSearchParams, useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import Markdown from 'react-native-markdown-display';
-
+import axios from 'axios';
+import { useSession } from '../../../ctx';
 
 export default function SummaryDetails() {
-  const { id } = useGlobalSearchParams();
-    console.log("Id da reunião:", id)
+  const { id } = useLocalSearchParams();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [summaryContent, setSummaryContent] = useState('');
+  const {session} = useSession();
+
+  
+  useEffect(() => {
+    const fetchSummary = async () => {
+      try {
+        const response = await axios.get(`https://app.echomeets.online/resumo/${16}`, {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`, 
+          },
+        });
+        console.log("Resposta do servidor:",  response.data);
+        setSummaryContent(response.data); 
+      } catch (err) {
+        console.log(err)
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSummary();
+  }, [id]);
+
+  if (loading) {
+    return <ActivityIndicator size="large" color="#0000ff" />;
+  }
+
+
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionTitle}>Reunião de planejamento {id}</Text>
-      <Text style={styles.textSmall}>Data: 03/08/2024, Sexta-Feira - 10:00h</Text>
-      <Text style={styles.textSmall}>Grupo: Financeiro</Text>
+      <Text style={styles.sectionTitle}>{summaryContent.meeting_name}</Text>
       <View>
         <Text style={styles.titleSecundary}>Resumo da reunião</Text>
         <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={true}>
-          <Markdown>{}</Markdown>
+          {/* <Markdown>{summaryContent}</Markdown> */}
         </ScrollView>
       </View>
     </View>
@@ -49,4 +79,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#E8E6F2',
     borderRadius: 10,
   },
+  errorText: {
+    color: 'red',
+    textAlign: 'center',
+    marginVertical: 20,
+  }
 });

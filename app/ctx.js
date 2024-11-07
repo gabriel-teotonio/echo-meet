@@ -29,7 +29,7 @@ export function SessionProvider(props) {
     formData.append("password", password);
 
     try {
-      const response = await axios.post("http://45.169.29.120:8000/login", formData, {
+      const response = await axios.post("https://app.echomeets.online/login", formData, {
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
         },
