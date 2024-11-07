@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator, Modal, Button, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Modal, Button, ScrollView } from 'react-native';
 import axios from 'axios';
-import { useSession } from '../app/ctx';
 import { useGlobalSearchParams } from 'expo-router';
+import {Picker} from '@react-native-picker/picker'
+import { useSession } from '../app/ctx';
 
 export default function Summaries({ grupoId }) {
   const { id } = useGlobalSearchParams();
@@ -11,7 +12,8 @@ export default function Summaries({ grupoId }) {
   const [reunioes, setReunioes] = useState([]);
   const [selectedSummary, setSelectedSummary] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
-
+  const [selectedValueType, setSelectedValueType] = useState("numeric");
+  const [dashboardHtml, setDashboardHtml] = useState(null);
   const { session } = useSession();
 
   const getSummaries = async () => {
@@ -33,6 +35,9 @@ export default function Summaries({ grupoId }) {
 
   useEffect(() => {
     getSummaries();
+    if (selectedSummary && selectedValueType) {
+      fetchDashboard();
+  }
   }, [id]);
 
   if (loading) {
@@ -48,6 +53,24 @@ export default function Summaries({ grupoId }) {
     setSelectedSummary(null);
     setModalVisible(false);
   };
+
+  const fetchDashboard = async () => {
+    if (selectedSummary) {
+        setLoading(true);
+        try {
+            const response = await axios.get(`https://app.echomeets.online/generate-dashboard/${selectedSummary.summary_id}/${selectedValueType}`);
+            setDashboardHtml(response.data);
+            setError(null);
+        } catch (error) {
+            console.error("Erro ao buscar o dashboard:", error);
+            setError("Dashboard não encontrado ou dados insuficientes.");
+            setDashboardHtml(null);
+        } finally {
+            setLoading(false);
+        }
+    }
+};
+
 
   return (
     <View style={styles.container}>
@@ -71,7 +94,30 @@ export default function Summaries({ grupoId }) {
           <ScrollView contentContainerStyle={styles.scrollContent}>
             <Text style={styles.modalTitle}>{selectedSummary?.meeting_name}</Text>
             <Text>{selectedSummary?.summary_text}</Text>
-            <Button title="Fechar" onPress={closeModal} />
+            <Text style={styles.label}>Escolha o tipo de valor:</Text>
+
+            <Picker 
+                selectedValue={selectedValueType}
+                style={styles.picker}
+                onValueChange={(itemValue) => setSelectedValueType(itemValue)}
+            >
+                <Picker.Item label="Numérico" value="numeric" />
+                <Picker.Item label="Percentual" value="percent" />
+            </Picker>
+            {dashboardHtml ? (
+                <WebView
+                    originWhitelist={['*']}
+                    source={{ html: dashboardHtml }}
+                    style={styles.webview}
+                />
+            ) : (
+                !loading && <Text>Selecione uma reunião e tipo de valor para visualizar o dashboard.</Text>
+            )}
+            {error && <Text style={styles.errorText}>{error}</Text>} 
+            <View style={styles.buttonsContainer}>
+            <Button style={styles.dashgenButton} title="Gerar Dashboard" onPress={fetchDashboard} />
+            <Button style={styles.closeButton} title="Fechar" onPress={closeModal} />
+            </View>
           </ScrollView>
         </View>
       </View>
@@ -87,10 +133,17 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: '#fff',
   },
+  errorText: {
+    color: 'red',
+  },
   summaryItem: {
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#ccc',
+  },
+  buttonsContainer:{
+    gap: 8,
+    marginTop: 16
   },
   summaryText: {
     fontSize: 16,
@@ -115,5 +168,25 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 10,
+  },
+  closeButton: {
+    marginVertical: 22
+  },
+  dashgenButton: {
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 5,
+    marginVertical: 22
+  },
+  picker: {
+    width: '100%',
+    marginBottom: 10,
+  },
+  webview: {
+    width: '100%',
+    height: '100%',
   },
 });

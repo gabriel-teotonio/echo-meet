@@ -22,13 +22,6 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <FontAwesome name="home" color={color} size={24}/>,
         }}
       />
-      <Tabs.Screen
-        name="summary/[id]"
-        options={{
-          title: "Reuniões",
-          tabBarIcon: ({ color }) => <FontAwesome name="wechat" color={color} size={24}/>,
-        }}
-        />
         <Tabs.Screen
         name="groups/index"
         options={{
