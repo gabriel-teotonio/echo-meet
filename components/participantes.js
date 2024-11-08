@@ -1,45 +1,42 @@
 // /app/groups/[id]/participants.js
 import { AntDesign, MaterialIcons } from '@expo/vector-icons';
+import { useLocalSearchParams } from 'expo-router';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-// import { useSearchParams } from 'expo-router';
+import { useSession } from '../app/ctx';
+import { useEffect, useState } from 'react';
+import axios from 'axios';
 
 export default function Participants({grupoId}) {
-//   const { id } = useSearchParams();
+  const [emails, setEmails] = useState([]);
 
-  // Exemplo de participantes para cada grupo
-  const participantsByGroup = {
-    1: ['João Financeiro', 'Maria Economista'],
-    2: ['Carlos Desenvolvedor', 'Ana DevOps'],
-    3: ['Pedro Marketing', 'Clara Comunicação'],
-    4: ['Lucas RH', 'Camila Talentos']
-  };
+  const { id } = useLocalSearchParams();
+  const { session } = useSession();
 
-  const participants = participantsByGroup[1] || [];
+  const getEmails = async () => {
+    try {
+        const res = await axios.get(`https://app.echomeets.online/grupos/${id}/emails`, {
+            headers: { Authorization: `Bearer ${session?.access_token}` },
+        });
+        setEmails(res.data);
+    } catch (error) {
+        console.error("Erro ao buscar emails:", error);
+    }
+};
+
+  useEffect(() => {
+      getEmails();
+  }, []);
 
   return (
     <View style={styles.container}>
-      {participants.length > 0 ? (
-        participants.map((participant, index) => (
+      {emails.length > 0 ? (
+        emails.map((email, index) => (
           <TouchableOpacity
           key={index}
           style={styles.groupItem}
           // onPress={() => router.push(`/groups/${group.id}`)}
         >
-          <Text style={styles.groupText}>{participant}</Text>
-          <View style={styles.iconContainer}>
-            <TouchableOpacity 
-              style={styles.editButton}
-              // onPress={() => editGroup(group.id)}
-            >
-              <AntDesign name="edit" size={18} color="white" />
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={styles.deleteButton}
-              // onPress={() => removeGroup(group.id)}
-            >
-              <MaterialIcons name="delete" size={18} color="white" />
-            </TouchableOpacity>
-          </View>
+          <Text style={styles.groupText}>{email.email}</Text>
         </TouchableOpacity>
         ))
       ) : (

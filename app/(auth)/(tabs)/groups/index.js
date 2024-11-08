@@ -84,20 +84,6 @@ export default function GroupsScreen() {
             onPress={() => router.push(`/groups/${group.id}`)}
           >
             <Text style={styles.groupText}>{group.name}</Text>
-            <View style={styles.iconContainer}>
-              <TouchableOpacity 
-                style={styles.editButton}
-                onPress={() => editGroup(group.id)}
-              >
-                <AntDesign name="edit" size={18} color="white" />
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.deleteButton}
-                onPress={() => removeGroup(group.id)}
-              >
-                <MaterialIcons name="delete" size={18} color="white" />
-              </TouchableOpacity>
-            </View>
           </TouchableOpacity>
         ))}
       </View>
