@@ -25,7 +25,6 @@ const Files = () => {
       const storedRecordings = await AsyncStorage.getItem("recordings");
       if (storedRecordings !== null) {
         const recordingsList = JSON.parse(storedRecordings);
-        console.log(recordingsList);
         setRecordings(recordingsList);
       } else {
         setRecordings([]);
@@ -47,7 +46,6 @@ const Files = () => {
           Authorization: `Bearer ${session.access_token}`,
         },
       })
-      console.log(res.data)
       setGroups(res.data);
     } catch (error) {
       console.error("Erro ao buscar grupos:", error);
@@ -111,14 +109,39 @@ const Files = () => {
     setSelectedGroup("");
   };
 
-  const generateSummary = async () => {
-    closeModal();
+  const generateSummary = async (audioFile) => {
+    if(!selectedGroup){
+      Alert.alert("Por favor, selecione um grupo.");
+      return;
+    }
+    if (!audioFile) {
+      Alert.alert("Erro", "Nenhum arquivo de áudio foi selecionado.");
+      return;
+    }
+  const formData = new FormData();
+ formData.append("audio_file", {
+    uri: audioFile.uri,
+    type: audioFile.type || "audio/mpeg",
+    name: audioFile.name || "audio.mp3",
+  });    
     try {
-      
-      Alert.alert("Sucesso", "Resumo gerado para o grupo selecionado.");
+      const response = await axios.post(`https://app.echomeets.online/transcricao-resumo/${selectedGroup}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${session?.access_token}`,
+        },
+      });
+      console.log(response.data);
+      // if(response.status === 200) {
+      //   const group = groups.find(grupo => grupo.name === selectedGroup);
+      // } else {
+      //   setFeedbackText('Erro ao transcrever o áudio, tente novamente!');
+      // }
     } catch (error) {
-      console.error("Erro ao gerar resumo:", error);
-      Alert.alert("Erro", "Falha ao gerar resumo.");
+      console.error("Erro ao transcrever o áudio:", error);
+      // setFeedbackText('Erro ao transcrever o áudio, tente novamente!');
+    } finally {
+      // closeGroupModal();
     }
   };
 
@@ -175,7 +198,14 @@ const Files = () => {
                 <Picker.Item key={index} label={group.name} value={group.name} />
               ))}
             </Picker>
-            <TouchableOpacity style={styles.modalButton} onPress={() => generateSummary} disabled={!selectedGroup}>
+            <TouchableOpacity
+            style={[
+              styles.modalButton,
+              !selectedGroup && styles.modalButtonDisabled,
+            ]}
+            onPress={() => generateSummary(selectedRecording)} 
+            disabled={!selectedGroup}
+             >
               <Text style={styles.modalButtonText}>Gerar Resumo</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.modalCloseButton} onPress={closeModal}>
@@ -204,9 +234,21 @@ const styles = StyleSheet.create({
   modalContent: { width: 300, padding: 20, backgroundColor: "white", borderRadius: 10, alignItems: "center" },
   modalTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 15 },
   picker: { width: 200, height: 50 },
-  modalButton: { marginTop: 20, backgroundColor: "#3A21B8", padding: 10, borderRadius: 5 },
+  modalButton: {
+    marginTop: 20, backgroundColor: "#3A21B8", padding: 10,
+    borderRadius: 5, width: "100%", alignItems: "center",
+    
+  },
+  modalButtonDisabled: {
+    backgroundColor: '#B0B0B0',
+  },
   modalButtonText: { color: "white" },
-  modalCloseButton: { marginTop: 10 },
+  modalCloseButton: { 
+    marginTop: 16, padding: 10, borderRadius: 5, 
+    borderStyle: "solid", borderColor: "red", 
+    borderWidth: 1, alignItems: "center",
+    width: "100%"
+  },
   modalCloseButtonText: { color: "#333" }
 });
 

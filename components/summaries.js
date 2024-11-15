@@ -74,14 +74,17 @@ export default function Summaries({ grupoId }) {
 
   return (
     <View style={styles.container}>
+    <ScrollView style={styles.scrollContainer}>
+
       {reunioes.length > 0 ? reunioes.map((item) => (
         <TouchableOpacity 
-          key={item.summary_id}
-          onPress={() => openModal(item)}
-          style={styles.summaryItem}>
+        key={item.summary_id}
+        onPress={() => openModal(item)}
+        style={styles.summaryItem}>
           <Text style={styles.summaryText}>{item.meeting_name}</Text>
         </TouchableOpacity>
       )) : <Text>Nenhum resumo encontrado</Text>}
+    </ScrollView>
 
     <Modal
       visible={modalVisible}
