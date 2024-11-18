@@ -18,7 +18,6 @@ export default function AudioRecordingScreen() {
   // Estado do popup
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [fileName, setFileName] = useState(""); // Nome do arquivo
-  const [group, setGroup] = useState(""); // Grupo associado
 
   // Função para iniciar a gravação
   async function startRecording() {
@@ -54,18 +53,20 @@ export default function AudioRecordingScreen() {
   async function importFile() {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: "audio/*",
-        copyToCacheDirectory: true,
+        type: "audio/*", // Permite apenas arquivos de áudio
+        copyToCacheDirectory: true, // Garante que o arquivo seja copiado para o cache
       });
 
-      if (result.type === "success") {
-        console.log("Arquivo importado:", result.uri);
-        Alert.alert("Arquivo importado com sucesso!", result.name);
-      } else {
+      if (!result.canceled) {
+        console.log("Arquivo importado com sucesso:", result.assets[0].uri);
+        Alert.alert("Arquivo importado com sucesso!", result.assets[0].name);
+      } else{
         console.log("Importação de arquivo cancelada.");
+        Alert.alert("Importação Cancelada", "Nenhum arquivo foi selecionado.");
       }
     } catch (error) {
       console.error("Erro ao importar arquivo:", error);
+      Alert.alert("Erro", "Não foi possível importar o arquivo.");
     }
   }
 
@@ -130,7 +131,7 @@ export default function AudioRecordingScreen() {
 
   // Função para salvar a gravação
   async function saveRecording() {
-    if (recordedUri && fileName && group) {
+    if (recordedUri && fileName) {
       try {
         // Aqui você pode adicionar a gravação à lista existente
         const savedRecordings = await AsyncStorage.getItem('recordings');
@@ -140,14 +141,12 @@ export default function AudioRecordingScreen() {
           date: new Date().toLocaleString(),
           uri: recordedUri,
           name: fileName,
-          group: group,
         };
 
         await AsyncStorage.setItem('recordings', JSON.stringify([...recordingsList, newRecording]));
         Alert.alert('Gravação salva com sucesso!');
         setIsModalVisible(false); // Fecha o popup após salvar
         setFileName(""); // Reseta o nome do arquivo
-        setGroup(""); // Reseta o grupo
       } catch (error) {
         console.error("Erro ao salvar a gravação:", error);
       }
@@ -183,7 +182,7 @@ export default function AudioRecordingScreen() {
             <FontAwesome name="microphone" size={32} color="white" />
           </TouchableOpacity>
         )}
-        {!recording && ( // Botão de importação só aparece se não estiver gravando
+         {!recording && ( // Botão de importação só aparece se não estiver gravando
           <TouchableOpacity style={[styles.importButton]} onPress={importFile}>
             <FontAwesome name="file" size={32} color="white" />
           </TouchableOpacity>
@@ -236,12 +235,6 @@ export default function AudioRecordingScreen() {
               value={fileName}
               onChangeText={setFileName}
             />
-            <TextInput
-              style={styles.input}
-              placeholder="Grupo"
-              value={group}
-              onChangeText={setGroup}
-            />
             <TouchableOpacity style={styles.saveButton} onPress={saveRecording}>
               <Text style={styles.saveButtonText}>Salvar</Text>
             </TouchableOpacity>
@@ -252,7 +245,7 @@ export default function AudioRecordingScreen() {
         </View>
       </Modal>
     </View>
-  );
+  )
 }
 
 // Estilos
@@ -284,6 +277,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#5E17EB",
     padding: 20,
     borderRadius: 50,
+    width: 80,
+    height: 80,
+    justifyContent: "center",
+    alignItems: "center",
     elevation: 4, // Sombra
   },
   importButton: {

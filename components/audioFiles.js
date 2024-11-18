@@ -132,16 +132,16 @@ const Files = () => {
         },
       });
       console.log(response.data);
-      // if(response.status === 200) {
-      //   const group = groups.find(grupo => grupo.name === selectedGroup);
-      // } else {
-      //   setFeedbackText('Erro ao transcrever o áudio, tente novamente!');
-      // }
+      if(response.status === 200) {
+        Alert.alert("Sucesso", "Resumo gerado com sucesso!");
+      } else {
+      Alert.alert('Erro ao transcrever o áudio, tente novamente!');
+      }
     } catch (error) {
       console.error("Erro ao transcrever o áudio:", error);
-      // setFeedbackText('Erro ao transcrever o áudio, tente novamente!');
+      Alert.alert('Erro ao transcrever o áudio, tente novamente!');
     } finally {
-      // closeGroupModal();
+      setModalVisible(false);
     }
   };
 
@@ -168,17 +168,18 @@ const Files = () => {
   };
 
   return (
-    <View style={styles.container}>
-      {recordings.length === 0 ? (
+    <View 
+     style={styles.container}
+     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+     >
+      {recordings.length === 0 && (
         <Text style={styles.noRecordingsText}>Nenhum áudio gravado encontrado.</Text>
-      ) : (
+      )}
         <FlatList
           data={recordings}
           renderItem={renderRecording}
           keyExtractor={(item, index) => index.toString()}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         />
-      )}
       <TouchableOpacity style={styles.floatingButton} onPress={() => router.push("recorder")}>
         <FontAwesome name="plus" size={24} color="white" />
       </TouchableOpacity>
