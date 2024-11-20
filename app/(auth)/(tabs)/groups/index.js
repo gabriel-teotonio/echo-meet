@@ -81,7 +81,7 @@ export default function GroupsScreen() {
           <TouchableOpacity
             key={group.id}
             style={styles.groupItem}
-            onPress={() => router.push(`/groups/${group.id}`)}
+            onPress={() => router.push(`/group/${group.id}`)}
           >
             <Text style={styles.groupText}>{group.name}</Text>
           </TouchableOpacity>

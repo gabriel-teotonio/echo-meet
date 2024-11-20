@@ -19,14 +19,16 @@ export default function Summaries({ grupoId }) {
   const getSummaries = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`https://app.echomeets.online/grupos/${id}/reunioes`, {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-      setReunioes(res.data);
+      if(id){
+        const res = await axios.get(`https://app.echomeets.online/grupos/${id}/reunioes`, {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        });
+        setReunioes(res.data);
+      }
     } catch (error) {
-      console.error("Erro ao buscar resumos:", error);
+      console.error("Erro ao buscar resumos de reunão:", error);
       setError(error.message);
     } finally {
       setLoading(false);

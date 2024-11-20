@@ -1,9 +1,9 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useGlobalSearchParams } from 'expo-router';
-import Participants from '../../../../components/participantes';
-import Summaries from '../../../../components/summaries';
-import AudioFiles from '../../../../components/audioFiles';
 import { MaterialIcons } from '@expo/vector-icons';
+import Participants from '../../../components/participantes';
+import Summaries from '../../../components/summaries';
+import Files from '../../../components/audioFiles';
 
 const Tab = createBottomTabNavigator();
 
@@ -36,7 +36,7 @@ const GroupPage = () => {
           title: 'Áudios', 
           tabBarIcon: ({ color }) => <MaterialIcons name="mic" color={color} size={24} /> 
         }}
-        children={() => <AudioFiles groupId={id} />}  // Passando a tela de Áudios
+        children={() => <Files groupId={id} />}  // Passando a tela de Áudios
       />
     </Tab.Navigator>
   );

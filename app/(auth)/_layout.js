@@ -45,6 +45,12 @@ export default function AppLayout() {
         }} 
       />
       <Stack.Screen name="recorder" />
+      <Stack.Screen
+        options={{
+          title:'Detalhes do Grupo'
+        }}
+        name="group/[id]" 
+      />
       <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
     </Stack>
   )
