@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import { StyleSheet, Text, TextInput, View, TouchableOpacity, ActivityIndicator } from "react-native";
-import { useSession } from "./ctx";
+import { StyleSheet, Text, TextInput, View, TouchableOpacity, ActivityIndicator, Image } from "react-native";
 import { useRouter } from "expo-router";
-
+import { useSession } from "../ctx";
+import LogoEchoMeet from '../assets/icons/logo.png';
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -32,7 +32,11 @@ export default function Login() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Echo Meet</Text>
+      <Image
+      style={styles.logo} 
+      resizeMode='contain' 
+      source={LogoEchoMeet} 
+      />
 
       <TextInput
         placeholder="Digite seu e-mail"
@@ -109,5 +113,9 @@ const styles = StyleSheet.create({
     color: "red",
     fontSize: 14,
     marginBottom: 20,
+  },
+  logo: {
+    width: 200,
+    height: 200,
   },
 });

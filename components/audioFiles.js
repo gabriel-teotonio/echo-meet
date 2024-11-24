@@ -6,7 +6,8 @@ import { FontAwesome, MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Picker } from "@react-native-picker/picker";
 import axios from "axios";
-import { useSession } from "../app/ctx";
+import { useSession } from "../ctx";
+import audioEmitter from "../events/recorderEmitter";
 
 const Files = () => {
   const [recordings, setRecordings] = useState([]);
@@ -17,6 +18,8 @@ const Files = () => {
   const [selectedRecording, setSelectedRecording] = useState(null);
   const [selectedGroup, setSelectedGroup] = useState("");
   const [groups, setGroups] = useState([]); // Lista de grupos
+  const [loading, setLoading] = useState(false);
+
   const router = useRouter();
   const { session } = useSession();
 
@@ -53,9 +56,10 @@ const Files = () => {
   };
 
   useEffect(() => {
-    fetchRecordings();
-    fetchGroups(); // Busca os grupos ao montar o componente
+    const listener = audioEmitter.addListener("newRecordingAdded", fetchRecordings);
+    fetchGroups(); 
     return () => {
+      listener.remove();
       if (playingSound) {
         playingSound.unloadAsync();
       }
@@ -110,6 +114,7 @@ const Files = () => {
   };
 
   const generateSummary = async (audioFile) => {
+    const groupId = groups.find(group => group.name === selectedGroup)?.id
     if(!selectedGroup){
       Alert.alert("Por favor, selecione um grupo.");
       return;
@@ -125,15 +130,17 @@ const Files = () => {
     name: audioFile.name || "audio.mp3",
   });    
     try {
+      setLoading(true);
+      Alert.alert("Aguarde", "Estamos gerando seu resumo, quando estiver finalizado, vocês será notificado.");
       const response = await axios.post(`https://app.echomeets.online/transcricao-resumo/${selectedGroup}`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${session?.access_token}`,
         },
       });
-      console.log(response.data);
       if(response.status === 200) {
         Alert.alert("Sucesso", "Resumo gerado com sucesso!");
+        router.push(`group/${groupId}`);
       } else {
       Alert.alert('Erro ao transcrever o áudio, tente novamente!');
       }
@@ -142,6 +149,7 @@ const Files = () => {
       Alert.alert('Erro ao transcrever o áudio, tente novamente!');
     } finally {
       setModalVisible(false);
+      setLoading(false);
     }
   };
 
@@ -205,12 +213,12 @@ const Files = () => {
               !selectedGroup && styles.modalButtonDisabled,
             ]}
             onPress={() => generateSummary(selectedRecording)} 
-            disabled={!selectedGroup}
+            disabled={!selectedGroup ||loading}
              >
-              <Text style={styles.modalButtonText}>Gerar Resumo</Text>
+              <Text style={styles.modalButtonText}>{loading ? "Gerando resumo..." : "Gerar Resumo"}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.modalCloseButton} onPress={closeModal}>
-              <Text style={styles.modalCloseButtonText}>Cancelar</Text>
+              <Text style={styles.modalCloseButtonText}>Fechar</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -220,9 +228,9 @@ const Files = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#f5f5f5" },
+  container: { flex: 1, padding: 20 },
   containText: {},
-  recordItemTitle: { fontSize: 18, fontWeight: "semibold", marginBottom: 3 },
+  recordItemTitle: { fontSize: 14, fontWeight: "semibold", marginBottom: 3 },
   noRecordingsText: { textAlign: "center", marginTop: 20, fontSize: 16, color: "#888" },
   recordingItem: { padding: 15, backgroundColor: "#fff", borderRadius: 8, marginBottom: 10, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   recordingText: { fontSize: 14, color: "#333" },

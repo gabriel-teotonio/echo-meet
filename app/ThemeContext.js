@@ -3,6 +3,8 @@ import React, { createContext, useContext, useState } from 'react';
 
 const ThemeContext = createContext();
 
+export default ThemeContext;
+
 export const ThemeProvider = ({ children }) => {
   const [isDarkMode, setIsDarkMode] = useState(false); // Estado para gerenciar o tema
 

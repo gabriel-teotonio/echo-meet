@@ -29,13 +29,13 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <FontAwesome name="group" color={color} size={24}/>,
         }}
       />
-       {/* <Tabs.Screen
-        name="files/index"
+       <Tabs.Screen
+        name="userInfo"
         options={{
-          title: "Arquivos de áudio",
-          tabBarIcon: ({ color }) => <FontAwesome name="file" color={color} size={24}/>,
+          title: "Dados do Usuário",
+          tabBarIcon: ({ color }) => <FontAwesome name="user" color={color} size={24}/>,
         }}
-      /> */}
+      />
     </Tabs>
   );
 }

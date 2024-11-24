@@ -3,7 +3,7 @@ import { StyleSheet, Text, View, TouchableOpacity, Alert, ActivityIndicator } fr
 import { AntDesign, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import axios from 'axios';
-import { useSession } from '../../../ctx';
+import { useSession } from '../../../../ctx';
 
 export default function GroupsScreen() {
   const router = useRouter();

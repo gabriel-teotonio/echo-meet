@@ -4,7 +4,8 @@ import { Audio } from "expo-av";
 import { FontAwesome } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as DocumentPicker from "expo-document-picker";
-import RecordEvents from '../events/recordEvents'; // Corrigido para o nome correto
+import RecordEvents from '../../events/recordEvents'; // Corrigido para o nome correto
+import audioEmitter from "../../events/recorderEmitter";
 
 export default function AudioRecordingScreen() {
   const [recording, setRecording] = useState(null);
@@ -59,6 +60,16 @@ export default function AudioRecordingScreen() {
 
       if (!result.canceled) {
         console.log("Arquivo importado com sucesso:", result.assets[0].uri);
+        const savedRecordings = await AsyncStorage.getItem('recordings');
+        const recordingsList = savedRecordings ? JSON.parse(savedRecordings) : [];
+
+        const newRecording = {
+          date: new Date().toLocaleString(),
+          uri: result.assets[0].uri,
+          name: result.assets[0].name,
+        };
+        await AsyncStorage.setItem('recordings', JSON.stringify([...recordingsList, newRecording]));
+        audioEmitter.emit("newRecordingAdded", newRecording);
         Alert.alert("Arquivo importado com sucesso!", result.assets[0].name);
       } else{
         console.log("Importação de arquivo cancelada.");
@@ -145,6 +156,7 @@ export default function AudioRecordingScreen() {
 
         await AsyncStorage.setItem('recordings', JSON.stringify([...recordingsList, newRecording]));
         Alert.alert('Gravação salva com sucesso!');
+        audioEmitter.emit("newRecordingAdded", newRecording);
         setIsModalVisible(false); // Fecha o popup após salvar
         setFileName(""); // Reseta o nome do arquivo
       } catch (error) {

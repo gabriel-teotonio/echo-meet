@@ -8,6 +8,7 @@ export default function TabOneScreen() {
 
   return (
     <View style={styles.container}>
+      <Text style={styles.title}>Olá, comece sua reunião</Text>
       <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         {/* Botão para fazer upload de reunião/audio */}
         <TouchableOpacity 
@@ -22,7 +23,7 @@ export default function TabOneScreen() {
         <TouchableOpacity 
         activeOpacity={0.8} 
         style={styles.roundedButton} 
-        onPress={() => router.push("/files")}
+        onPress={() => router.push("/groups")}
         >
           <MaterialIcons name="document-scanner" size={32} color="white"/>
           <Text style={styles.buttonText}>Gerar Resumo</Text>
@@ -48,6 +49,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     paddingHorizontal: 20,
     paddingVertical: 40,
+  },
+  title: {
+    fontSize: 18,
+    marginBottom: 20,
   },
   scrollContainer: {
     width: '100%',

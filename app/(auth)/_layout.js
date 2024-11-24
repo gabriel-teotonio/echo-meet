@@ -1,12 +1,12 @@
-import { Link, Redirect, Stack } from 'expo-router';
-import { useSession } from '../ctx';
+import { Redirect, Stack, useRouter } from 'expo-router';
+import { useSession } from '../../ctx';
 import { Image, Pressable, Text } from 'react-native';
 import LogoEchoMeet from '../../assets/icons/logo.png';
 import { FontAwesome } from '@expo/vector-icons';
 
 export default function AppLayout() {
   const { session, isLoading } = useSession();
-  
+  const router = useRouter();
   if (isLoading) {
     return <Text>Loading...</Text>;
   }
@@ -20,26 +20,12 @@ export default function AppLayout() {
       <Stack.Screen 
         name="(tabs)" 
         options={{
-          headerRight: () => (
-            <Link href="/userInfo" asChild>
-              <Pressable>
-                {({ pressed }) => (
-                  <FontAwesome
-                    name="user-circle"
-                    size={25}
-                    color={'blue'}
-                    style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }}
-                  />
-                )}
-              </Pressable>
-            </Link>
-          ),
           headerShown: true,
           headerTitle: () => (
             <Image 
               style={{ width: 120 }} 
               resizeMode='contain' 
-              source={LogoEchoMeet} 
+              source={LogoEchoMeet}
             />
           )
         }} 

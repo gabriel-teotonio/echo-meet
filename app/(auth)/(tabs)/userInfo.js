@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, Switch, StyleSheet, Image, TouchableOpacity } from 'react-native';
-import { useSession } from '../ctx';
+import { useSession } from '../../../ctx';
 
 export default function UserInfoScreen() {
   const { session, signOut } = useSession();

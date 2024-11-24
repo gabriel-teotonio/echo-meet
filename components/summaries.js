@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Modal, But
 import axios from 'axios';
 import { useGlobalSearchParams } from 'expo-router';
 import {Picker} from '@react-native-picker/picker'
-import { useSession } from '../app/ctx';
+import { useSession } from '../ctx';
 
 export default function Summaries({ grupoId }) {
   const { id } = useGlobalSearchParams();

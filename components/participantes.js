@@ -2,7 +2,7 @@
 import { AntDesign, MaterialIcons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { useSession } from '../app/ctx';
+import { useSession } from '../ctx';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 

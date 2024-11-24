@@ -1,8 +1,8 @@
 import React from "react";
-import { useStorageState } from "../hooks/useStorageState";
+import { useStorageState } from "./hooks/useStorageState";
 import axios from "axios";
 
-const AuthContext = React.createContext({
+export const AuthContext = React.createContext({
   signIn: () => null,
   signOut: () => null,
   session: null,
