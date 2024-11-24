@@ -57,6 +57,7 @@ const Files = () => {
 
   useEffect(() => {
     const listener = audioEmitter.addListener("newRecordingAdded", fetchRecordings);
+    fetchRecordings(); 
     fetchGroups(); 
     return () => {
       listener.remove();
